@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Paints the watercolours. Driven by scripts/bake-art.mjs. -->
+<script type="module">
+  import { paintCard, paintSpray, SPRAYS } from '/src/art/watercolor.js';
+
+  const blank = (w, h) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  };
+
+  window.bake = () => {
+    const out = {};
+    const card = blank(1024, 1434);
+    paintCard(card.getContext('2d'), 1024, 1434, 12);
+    out['card.webp'] = card.toDataURL('image/webp', 0.9);
+    Object.keys(SPRAYS).forEach((name, i) => {
+      const c = blank(620, 620);
+      paintSpray(c.getContext('2d'), 620, name, 40 + i * 7);
+      out[`spray-${name}.webp`] = c.toDataURL('image/webp', 0.9);
+    });
+    return out;
+  };
+  window.ready = true;
+</script>
