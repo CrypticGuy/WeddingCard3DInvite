@@ -1,0 +1,204 @@
+{
+  "concept0": {
+    "refs": [],
+    "text": "Use case: illustration-story\nAsset type: wide panorama illustration for a wedding invitation website, used as style reference.\nPrimary request: a very wide panoramic painting of a Hindu wedding mandap at dusk in a garden. An ornate open four-pillared mandap with a domed canopy, draped in blush silk and strings of marigolds; a small sacred fire burning in a square brass havan kund in the centre. Marigold torans overhead. Distant soft hills and a pale palace silhouette in the far background. Banks of roses and marigolds in the foreground. Blush and peach evening sky with soft clouds.\nComposition/framing: wide landscape 2:1. The top 40 percent is mostly open sky. The ground is a soft pale strip along the bottom."
+  },
+  "concept-mehendi": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nInput images: Image 1 is a style reference only. Match its medium, brushwork, paper grain and level of finish exactly. Do not copy its subject.\nPrimary request: a very wide panoramic painting of a mehendi garden in late afternoon. A carved wooden garden swing (jhoola) with cushions hanging on ropes wound with jasmine and marigold from the bough of a large old mango tree. Low brass trays of henna cones and rose petals on a rug beside it. Soft green lawn, distant hills, a pale haveli pavilion far away. Banks of jasmine, roses and ferns in the foreground. Soft sage, mint and warm cream sky with drifting clouds.\nComposition/framing: wide landscape 2:1. The top 40 percent is mostly open sky. The ground is a soft pale strip along the bottom."
+  },
+  "concept-haldi": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nInput images: Image 1 is a style reference only. Match its medium, brushwork, paper grain and level of finish exactly. Do not copy its subject.\nPrimary request: a very wide panoramic painting of a haldi ceremony courtyard in bright morning light. An old sandstone courtyard arch hung with curtains of marigold strands and a mango-leaf toran. A low carved wooden seat (chowki) with a yellow silk cushion. A large brass urli bowl floating with marigold heads, brass lotas and small bowls of turmeric paste on the floor. Baskets of marigolds. Soft distant hills beyond. Warm pale gold and butter yellow sky.\nComposition/framing: wide landscape 2:1. The top 40 percent is mostly open sky. The ground is a soft pale strip along the bottom."
+  },
+  "concept-sangeet": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nInput images: Image 1 is a style reference only. Match its medium, brushwork, paper grain and level of finish exactly. Do not copy its subject.\nPrimary request: a very wide panoramic painting of a sangeet evening in a palace garden at blue hour. An open draped pavilion stage with a low platform, a pair of dholak drums, a harmonium and floor cushions. Pierced brass lanterns of several sizes hang from above on long chains, glowing warm amber. Strings of tiny warm lights. Dusk sky of powder lilac and soft dusty indigo melting to rose at the horizon, with a few pale stars. Distant hills and palace silhouette. Night jasmine and roses in the foreground.\nComposition/framing: wide landscape 2:1. The top 40 percent is mostly open sky. The ground is a soft pale strip along the bottom."
+  },
+  "wedding-sky": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: sky background layer of a parallax scene.\nInput images: Image 1 is the reference. Paint only its evening sky: same colours, same wet-in-wet clouds, same paper grain.\nPrimary request: an empty blush and peach evening sky painted edge to edge, lilac at the top warming to pale gold at the bottom. Soft horizontal cloud banks. Nothing else: no land, no hills, no buildings, no trees.\nComposition/framing: wide landscape 2:1, the whole sheet covered with paint, no white margins."
+  },
+  "wedding-hills": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated background layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style, colours and the distant landscape.\nPrimary request: only the far landscape from the reference, on plain pure white (#ffffff) unpainted background: soft lilac hills, a sage tree line, a tiny pale palace on a far hill right of centre, then a broad warm sandy-peach ground wash that fills the lower third and runs off the bottom, left and right edges. No mandap, no pavilion, no foreground flowers.\nComposition/framing: very wide landscape 2:1. The top 45 percent of the sheet is empty pure white with no paper tone and no vignette. The hills run the full width, edge to edge."
+  },
+  "wedding-subject": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated subject of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for this exact mandap, style and colours.\nPrimary request: the wedding mandap from the reference, alone: open four-pillared carved ivory mandap with a domed canopy, blush silk drapes tied back at the pillars, strings of marigolds and a rose garland, standing on a low stone platform, with a square brass havan kund at the centre of the platform holding only embers and no flames. Everything else removed. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no hills, no paper tone, no vignette. The space seen through the open arches is also pure white.\nComposition/framing: straight on, centred, whole structure in frame with a small margin, nearly square format."
+  },
+  "wedding-fg": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated foreground layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for the flowers, style and colours.\nPrimary request: a low continuous bank of garden roses, marigolds and leaves growing up from the bottom edge. Tall clumps at the far left, around the middle and at the far right, with lower gaps of leaves between them. Plain pure white (#ffffff) unpainted background above and around the flowers, no ground wash, no paper tone, no vignette.\nComposition/framing: very wide landscape 3:1. The flowers are cut off by the bottom edge of the image and also run off the left and right edges."
+  },
+  "wedding-flame": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprite, to be cut out.\nInput images: Image 1 is the reference for the sacred flame.\nPrimary request: a single soft watercolor flame like the one in the reference's fire pit: three or four licking tongues, pale gold core, warm amber and rose edges, loosely painted. Only the flame, no fire pit and no logs. Plain pure white (#ffffff) unpainted background.\nComposition/framing: centred, base of the flame near the bottom, portrait 3:4."
+  },
+  "wedding-clouds": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites, to be cut out.\nInput images: Image 1 is the reference for cloud style and colour.\nPrimary request: three separate long, thin wisps of soft evening cloud in rose, lilac and peach, painted wet-in-wet with very soft edges, stacked one above the other with generous empty space between them. Plain pure white (#ffffff) unpainted background, no paper tone.\nComposition/framing: square format; each cloud spans about 80 percent of the width."
+  },
+  "petals": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprite sheet, to be cut out.\nInput images: Image 1 is the reference for colour and style.\nPrimary request: nine separate loose flower petals arranged in a neat 3 by 3 grid with wide empty gaps between them: top row three blush rose petals, middle row three small marigold petals in soft orange and gold, bottom row three pale jasmine and peach petals. Each is a single curled petal seen at a different angle, painted with soft watercolor gradients. Plain pure white (#ffffff) unpainted background, no paper tone, no shadows.\nComposition/framing: square format, each petal the same size and well separated."
+  },
+  "mehendi-sky": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: sky background layer of a parallax scene.\nInput images: Image 1 is the reference for medium, brushwork and paper grain.\nPrimary request: an empty late-afternoon sky in soft sage, pale mint and warm cream, with a blush of peach low down near the horizon and pale drifting cloud banks. Clearly greener and cooler than a sunset. Nothing else: no land, no hills, no buildings, no trees.\nComposition/framing: wide landscape 2:1, the whole sheet covered with paint, no white margins."
+  },
+  "haldi-sky": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: sky background layer of a parallax scene.\nInput images: Image 1 is the reference for medium, brushwork and paper grain.\nPrimary request: an empty bright morning sky in pale butter yellow and warm cream, with a faint powder lilac at the very top and soft sunlit cloud banks. Nothing else: no land, no hills, no buildings, no trees.\nComposition/framing: wide landscape 2:1, the whole sheet covered with paint, no white margins."
+  },
+  "sangeet-sky": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: sky background layer of a parallax scene.\nInput images: Image 1 is the reference for medium, brushwork and paper grain.\nPrimary request: an empty blue-hour sky of powder lilac and soft dusty indigo at the top, melting to rose near the bottom, with soft cloud banks and only a few pale, widely spaced, soft stars. Nothing else: no land, no hills, no buildings, no trees.\nComposition/framing: wide landscape 2:1, the whole sheet covered with paint, no white margins."
+  },
+  "mehendi-hills": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated background layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style, colours and the distant landscape.\nPrimary request: only the far landscape, on plain pure white (#ffffff) unpainted background: soft lilac-blue hills, a sage tree line, a tiny pale pavilion on a far hill to the right, then a broad soft green lawn wash that fills the lower third and runs off the bottom, left and right edges. No foreground flowers, no main subject.\nComposition/framing: very wide landscape 2:1. The top 45 percent of the sheet is empty pure white with no paper tone and no vignette. The land runs the full width, edge to edge."
+  },
+  "haldi-hills": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated background layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style, colours and the distant landscape.\nPrimary request: only the far landscape, on plain pure white (#ffffff) unpainted background: soft lilac hills, a sage tree line, then a low carved sandstone balustrade running the full width, and below it a broad pale warm stone terrace floor that fills the lower third and runs off the bottom, left and right edges. No foreground flowers, no main subject.\nComposition/framing: very wide landscape 2:1. The top 45 percent of the sheet is empty pure white with no paper tone and no vignette. The land runs the full width, edge to edge."
+  },
+  "sangeet-hills": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated background layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style, colours and the distant landscape.\nPrimary request: only the far landscape, on plain pure white (#ffffff) unpainted background: soft dusky indigo and lilac hills, a dark sage tree line, a small far palace with tiny warm lit windows to the right, then a broad dusk-rose lawn wash that fills the lower third and runs off the bottom, left and right edges. No foreground flowers, no main subject.\nComposition/framing: very wide landscape 2:1. The top 45 percent of the sheet is empty pure white with no paper tone and no vignette. The land runs the full width, edge to edge."
+  },
+  "mehendi-subject": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated subject of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style and colours.\nPrimary request: a great old mango tree with a thick trunk at the left and one strong horizontal bough reaching out to the right, full soft green canopy with a few mangoes, a marigold garland wound round the trunk. Below the bough, on the grass at the lower right, a small fringed rug holding brass trays of henna cones and rose petals. NO swing, nothing hanging from the bough. Everything else removed. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette. Any space seen through openings is also pure white.\nComposition/framing: straight on, centred, whole subject in frame with a small margin, square format."
+  },
+  "mehendi-swing": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprite that will swing, to be cut out.\nInput images: Image 1 is the reference for this carved wooden garden swing.\nPrimary request: the swing alone: a carved wooden jhoola seat with cushions, hanging on two long ropes wound with jasmine and marigolds. The two ropes run straight up to the very top edge of the image and are cut off there. No tree. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: straight on, portrait 3:4, swing seat in the lower third, ropes filling the height."
+  },
+  "haldi-subject": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated subject of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style and colours.\nPrimary request: the sandstone arch from the reference with its mango-leaf toran and butter-yellow drapes, a few strands of marigolds at the sides, the low carved chowki with its yellow cushion in front, a large brass urli bowl with floating marigolds, brass lotas, little bowls of turmeric paste and a basket of marigolds on the floor. No terrace wall, no floor painted: objects only. Everything else removed. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette. Any space seen through openings is also pure white.\nComposition/framing: straight on, centred, whole subject in frame with a small margin, square format."
+  },
+  "haldi-strands": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites that will sway, to be cut out.\nInput images: Image 1 is the reference for the marigold strands.\nPrimary request: three separate long hanging strands of marigold flower heads, side by side with wide gaps between them, each a single vertical string with a small tassel of mango leaf at the bottom. Each strand runs from the very top edge of the image. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format, three evenly spaced vertical strands."
+  },
+  "sangeet-subject": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated subject of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for style and colours.\nPrimary request: an open music pavilion: a flat softly swagged blush silk canopy (no dome) on four slender carved ivory poles, wound with jasmine, on a low platform spread with a rug, floor cushions, a pair of dholak drums and a harmonium. No lanterns hanging, no strings of lights. Everything else removed. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette. Any space seen through openings is also pure white.\nComposition/framing: straight on, centred, whole subject in frame with a small margin, square format."
+  },
+  "sangeet-lanterns": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites that will sway, to be cut out.\nInput images: Image 1 is the reference for these lanterns.\nPrimary request: three separate pierced brass Moroccan-style Indian lanterns, side by side with wide gaps between them, glowing warm amber from inside, each hanging from a thin chain that runs to the very top edge of the image. The middle one larger and lower. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format."
+  },
+  "mehendi-fg": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated foreground layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for the plants, style and colours.\nPrimary request: a low continuous bank of jasmine, pale roses and ferns growing up from the bottom edge. Tall clumps at the far left, around the middle and at the far right, with lower gaps of leaves between them. Plain pure white (#ffffff) unpainted background above and around the plants, no ground wash, no paper tone, no vignette.\nComposition/framing: very wide landscape 3:1. The plants are cut off by the bottom edge of the image and also run off the left and right edges."
+  },
+  "haldi-fg": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated foreground layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for the plants, style and colours.\nPrimary request: a low continuous bank of marigolds, pink bougainvillea and small white jasmine growing up from the bottom edge. Tall clumps at the far left, around the middle and at the far right, with lower gaps of leaves between them. Plain pure white (#ffffff) unpainted background above and around the plants, no ground wash, no paper tone, no vignette.\nComposition/framing: very wide landscape 3:1. The plants are cut off by the bottom edge of the image and also run off the left and right edges."
+  },
+  "sangeet-fg": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated foreground layer of a parallax scene, to be cut out.\nInput images: Image 1 is the reference for the plants, style and colours.\nPrimary request: a low continuous bank of night jasmine and dusky pink roses, slightly dimmed in evening light growing up from the bottom edge. Tall clumps at the far left, around the middle and at the far right, with lower gaps of leaves between them. Plain pure white (#ffffff) unpainted background above and around the plants, no ground wash, no paper tone, no vignette.\nComposition/framing: very wide landscape 3:1. The plants are cut off by the bottom edge of the image and also run off the left and right edges."
+  },
+  "mehendi-clouds": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites, to be cut out.\nInput images: Image 1 is the reference for cloud style and colour.\nPrimary request: three separate long, thin wisps of soft cloud in cream, pale sage and faint peach, painted wet-in-wet with very soft edges, stacked one above the other with generous empty space between them. Plain pure white (#ffffff) unpainted background, no paper tone.\nComposition/framing: square format; each cloud spans about 80 percent of the width."
+  },
+  "haldi-clouds": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites, to be cut out.\nInput images: Image 1 is the reference for cloud style and colour.\nPrimary request: three separate long, thin wisps of soft cloud in cream, pale gold and faint rose, painted wet-in-wet with very soft edges, stacked one above the other with generous empty space between them. Plain pure white (#ffffff) unpainted background, no paper tone.\nComposition/framing: square format; each cloud spans about 80 percent of the width."
+  },
+  "sangeet-clouds": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: isolated sprites, to be cut out.\nInput images: Image 1 is the reference for cloud style and colour.\nPrimary request: three separate long, thin wisps of soft cloud in dusty lilac, indigo and rose, painted wet-in-wet with very soft edges, stacked one above the other with generous empty space between them. Plain pure white (#ffffff) unpainted background, no paper tone.\nComposition/framing: square format; each cloud spans about 80 percent of the width."
+  },
+  "mehendi-sprig": {
+    "refs": [
+      "concept-mehendi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: small corner decoration for a printed invitation card, to be cut out.\nInput images: Image 1 is the reference for style.\nPrimary request: a small loose floral sprig of jasmine, a fern frond and one small blush rose, sweeping diagonally from upper right to lower left. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format, sprig fills the frame."
+  },
+  "haldi-sprig": {
+    "refs": [
+      "concept-haldi"
+    ],
+    "text": "Use case: illustration-story\nAsset type: small corner decoration for a printed invitation card, to be cut out.\nInput images: Image 1 is the reference for style.\nPrimary request: a small loose floral sprig of marigolds and mango leaves, sweeping diagonally from upper right to lower left. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format, sprig fills the frame."
+  },
+  "sangeet-sprig": {
+    "refs": [
+      "concept-sangeet"
+    ],
+    "text": "Use case: illustration-story\nAsset type: small corner decoration for a printed invitation card, to be cut out.\nInput images: Image 1 is the reference for style.\nPrimary request: a small loose floral sprig of night jasmine and a pale lilac sweet pea, sweeping diagonally from upper right to lower left. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format, sprig fills the frame."
+  },
+  "wedding-sprig": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: small corner decoration for a printed invitation card, to be cut out.\nInput images: Image 1 is the reference for style.\nPrimary request: a small loose floral sprig of one blush rose, marigolds and leaves, sweeping diagonally from upper right to lower left. Plain pure white (#ffffff) unpainted background, no ground, no shadow, no paper tone, no vignette.\nComposition/framing: square format, sprig fills the frame."
+  },
+  "paper": {
+    "refs": [
+      "concept0"
+    ],
+    "text": "Use case: illustration-story\nAsset type: blank stationery sheet, to be cut out and used as a nine-slice card background.\nPrimary request: a single blank sheet of thick handmade ivory cotton paper seen straight on, perfectly flat, filling almost the whole image, with soft irregular torn deckle edges all round and a very faint antique gold tint along the deckle. The surface is otherwise completely plain and even in tone, with subtle paper tooth only. Nothing written or painted on it. Plain pure white (#ffffff) background around the sheet, with a thin margin of white on all four sides. No shadow.\nComposition/framing: straight on, square format."
+  }
+}

@@ -8,6 +8,8 @@ Built with Three.js, GSAP and Vite. Every model is generated in code, so there a
 
 The site root is a review page listing every version. Each version is a folder: `v1/` for the page and `public/v1/` for its static files. To add one, create `v3/index.html` and add an entry to [`src/router/versions.js`](src/router/versions.js). The build picks up new folders automatically.
 
+`v2/` is the watercolour storybook: V1's opening and finale around four painted scenes. Its code is in `src/v2/` and its art in `public/v2/art/`. `v3/` is the same storybook without the dog (`data-variant="nodog"`) and shares V2's code and art. How the art was made is in [`public/v2/art/CREDITS.md`](public/v2/art/CREDITS.md); to remake it, see the scripts in `scripts/v2-art/`.
+
 ## Edit the invite
 
 All wording, dates and venues live in [`src/config.js`](src/config.js). Dates shown there are placeholders until replaced.
@@ -21,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Useful URL flags: `?skip` jumps past the opening, `?low` forces the phone quality level, `?perf` shows the performance monitor.
+Useful URL flags: `?skip` jumps past the opening, `?low` forces the phone quality level (and V2's small art), `?perf` shows the performance monitor.
 
 ## Publish
 

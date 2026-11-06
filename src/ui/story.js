@@ -2,24 +2,24 @@ import { invite } from '../config.js';
 
 const TZ = invite.timeZone;
 const fmt = (o) => new Intl.DateTimeFormat('en-GB', { timeZone: TZ, ...o });
-const part = (d, o) => fmt(o).format(d);
-const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+export const part = (d, o) => fmt(o).format(d);
+export const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 export const dateOf = (e) => new Date(e.start);
 
-function timeOfDay(d) {
+export function timeOfDay(d) {
   const h = Number(fmt({ hour: 'numeric', hourCycle: 'h23' }).format(d));
   return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
 }
 
-function timeRange(e) {
+export function timeRange(e) {
   const f = (d) => part(d, { hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', ' ').toLowerCase();
   return `${f(new Date(e.start))} to ${f(new Date(e.end))}`;
 }
 
 const utc = (d) => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
-function googleLink(e) {
+export function googleLink(e) {
   const q = new URLSearchParams({
     action: 'TEMPLATE',
     text: `${e.title}: ${invite.couple.first} & ${invite.couple.second}`,
@@ -45,7 +45,7 @@ export function icsFile() {
   return lines.join('\r\n');
 }
 
-function dateSpan() {
+export function dateSpan() {
   const ds = invite.events.map(dateOf);
   const a = ds[0], b = ds[ds.length - 1];
   const day = (d) => part(d, { day: 'numeric' });
@@ -56,7 +56,7 @@ function dateSpan() {
     : `${day(a)} ${part(a, { month: 'long' })} to ${day(b)} ${month} ${year}`;
 }
 
-const letters = (s) => [...s].map((c, i) => `<span class="ch" style="--i:${i}" aria-hidden="true">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('');
+export const letters = (s) => [...s].map((c, i) => `<span class="ch" style="--i:${i}" aria-hidden="true">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('');
 
 function eventCard(e, i) {
   const d = dateOf(e);

@@ -1,0 +1,173 @@
+{
+ "mehendi": {
+  "sky": {
+   "src": "mehendi-sky",
+   "mode": "opaque",
+   "q": 80,
+   "lighten": 0.14
+  },
+  "hills": {
+   "src": "mehendi-hills",
+   "mode": "object",
+   "q": 82
+  },
+  "subject": {
+   "src": "mehendi-subject",
+   "mode": "object",
+   "size": 1200,
+   "q": 84
+  },
+  "fg": {
+   "src": "mehendi-fg",
+   "mode": "object",
+   "q": 82
+  },
+  "cloud": {
+   "src": "mehendi-clouds",
+   "mode": "clouds",
+   "lighten": 0.6
+  },
+  "sprig": {
+   "src": "mehendi-sprig",
+   "mode": "object",
+   "size": 300,
+   "q": 82
+  },
+  "swing": {
+   "src": "mehendi-swing",
+   "mode": "object",
+   "size": 900,
+   "q": 84
+  }
+ },
+ "haldi": {
+  "sky": {
+   "src": "haldi-sky",
+   "mode": "opaque",
+   "q": 80
+  },
+  "hills": {
+   "src": "haldi-hills",
+   "mode": "object",
+   "q": 82
+  },
+  "subject": {
+   "src": "haldi-subject",
+   "mode": "object",
+   "size": 1200,
+   "q": 84
+  },
+  "fg": {
+   "src": "haldi-fg",
+   "mode": "object",
+   "q": 82
+  },
+  "cloud": {
+   "src": "haldi-clouds",
+   "mode": "clouds"
+  },
+  "sprig": {
+   "src": "haldi-sprig",
+   "mode": "object",
+   "size": 300,
+   "q": 82
+  },
+  "strand": {
+   "src": "haldi-strands",
+   "mode": "columns",
+   "size": 1000
+  }
+ },
+ "sangeet": {
+  "sky": {
+   "src": "sangeet-sky",
+   "mode": "opaque",
+   "q": 80
+  },
+  "hills": {
+   "src": "sangeet-hills",
+   "mode": "object",
+   "q": 82
+  },
+  "subject": {
+   "src": "sangeet-subject",
+   "mode": "object",
+   "size": 1200,
+   "q": 84
+  },
+  "fg": {
+   "src": "sangeet-fg",
+   "mode": "object",
+   "q": 82
+  },
+  "cloud": {
+   "src": "sangeet-clouds",
+   "mode": "clouds"
+  },
+  "sprig": {
+   "src": "sangeet-sprig",
+   "mode": "object",
+   "size": 300,
+   "q": 82
+  },
+  "lantern": {
+   "src": "sangeet-lanterns",
+   "mode": "columns",
+   "size": 1000
+  }
+ },
+ "wedding": {
+  "sky": {
+   "src": "wedding-sky",
+   "mode": "opaque",
+   "q": 80,
+   "lighten": 0.14
+  },
+  "hills": {
+   "src": "wedding-hills",
+   "mode": "object",
+   "q": 82
+  },
+  "subject": {
+   "src": "wedding-subject",
+   "mode": "object",
+   "size": 1200,
+   "q": 84
+  },
+  "fg": {
+   "src": "wedding-fg",
+   "mode": "object",
+   "q": 82
+  },
+  "cloud": {
+   "src": "wedding-clouds",
+   "mode": "clouds"
+  },
+  "sprig": {
+   "src": "wedding-sprig",
+   "mode": "object",
+   "size": 300,
+   "q": 82
+  },
+  "flame": {
+   "src": "wedding-flame",
+   "mode": "object",
+   "size": 320
+  }
+ },
+ "petals": {
+  "p": {
+   "src": "petals",
+   "mode": "petals"
+  }
+ },
+ ".": {
+  "paper": {
+   "src": "paper",
+   "mode": "object",
+   "size": 520,
+   "q": 80,
+   "lighten": 0.55
+  }
+ }
+}
