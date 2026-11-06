@@ -1,0 +1,26 @@
+{
+ "fw": 264,
+ "fh": 232,
+ "cols": 8,
+ "strips": {
+  "walk": {
+   "start": 0,
+   "n": 12
+  },
+  "back": {
+   "start": 12,
+   "n": 12
+  },
+  "settle": {
+   "start": 24,
+   "n": 6
+  },
+  "idle": {
+   "start": 30,
+   "n": 16
+  }
+ },
+ "worldHeight": 1.4766,
+ "footLift": 0.0271,
+ "rootX": 0.3759
+}

@@ -1,0 +1,85 @@
+<!doctype html>
+<!-- Renders the real V1 Beagle frame by frame. Driven by scripts/v2-art/bake-dog.mjs. -->
+<canvas id="c" width="720" height="600"></canvas>
+<script type="module">
+  import * as THREE from 'three';
+  import { Beagle } from '/src/world/beagle.js';
+  import { shared } from '/src/world/kit.js';
+
+  const W = 720, H = 600;
+  const r = new THREE.WebGLRenderer({ canvas: document.querySelector('#c'), alpha: true, antialias: true, preserveDrawingBuffer: true });
+  r.setSize(W, H, false);
+  r.setClearColor(0, 0);
+  r.toneMapping = THREE.NoToneMapping;
+  const scene = new THREE.Scene();
+  // Soft, nearly shadowless daylight: the paint filter supplies the rest of the form.
+  scene.add(new THREE.HemisphereLight('#fff8f0', '#e9d8cc', 2.0));
+  const sun = new THREE.DirectionalLight('#fff4e6', 1.1);
+  sun.position.set(-3, 6, 7);
+  scene.add(sun);
+  shared.uRim.value.set('#fff4ea');
+
+  // Same view direction as the close shot in the 3D world, so the hand-off lines up.
+  const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+  const tgt = new THREE.Vector3(0.1, 0.56, 0);
+  const dist = 3.7;
+  cam.position.copy(tgt).add(new THREE.Vector3(0.07, 0.13, 1).multiplyScalar(dist));
+  cam.lookAt(tgt);
+
+  const dog = new Beagle();
+  scene.add(dog.root);
+  dog.root.position.set(0, 0, 0);
+
+  const TAU = Math.PI * 2;
+  const DT = 1 / 30;
+  const base = { walk: 0, sit: 0, wag: 0, pant: 1, crouch: 0, lean: 0, shake: 0, lookYaw: 0, lookPitch: 0, hop: 0, tilt: 0 };
+
+  // Sets a pose, steps the rig once, then pins the time-driven parts so the strip loops.
+  function step(pose, { phase, heading = 0, tail = 0, tailZ, tongue = 1, blink = 0 }) {
+    Object.assign(dog, base, pose);
+    dog.gait = 0;
+    dog.phase = phase;
+    dog.blinkAt = 1e9;
+    dog.blink = 0;
+    dog.yaw.rotation.y = heading;
+    dog.update(DT, 0);
+    dog.tail.rotation.x = tail;
+    if (tailZ != null) dog.tail.rotation.z = tailZ;
+    dog.tongue.scale.y = 1.35 * dog.pant * tongue;
+    for (const e of dog.eyes) e.scale.y = Math.max(0.1, 1 - blink);
+  }
+
+  const shots = {
+    // V1 trot: walk 1, wag .55, pant 1.
+    walk: (k, n) => {
+      const a = (k / n) * TAU;
+      return [{ walk: 1, wag: 0.55, pant: 1 }, { phase: a, tail: Math.sin(a * 2) * 0.36, tongue: 0.95 + 0.1 * Math.sin(a * 2) }];
+    },
+    // V1 reverse (updateDog): facing forward, head low and turned a little to the
+    // viewer, tail nearly still. Phase runs backwards so the feet step the other way.
+    back: (k, n) => {
+      const a = -(k / n) * TAU;
+      return [{ walk: 0.62, wag: 0.18, pant: 0.5, crouch: 0.42, lookYaw: -0.45, lookPitch: -0.16 }, { phase: a, tail: Math.sin(a) * 0.1, tailZ: -0.42, tongue: 0.9 }];
+    },
+    // Standing to sitting, turning to the viewer as it does at a V1 stop.
+    settle: (k, n) => {
+      const q = k / (n - 1), e = q * q * (3 - 2 * q);
+      return [{ walk: 0, sit: e, wag: 0.5, pant: 1, lookYaw: -0.2 * e, lookPitch: 0.08 * e }, { phase: 0, heading: -0.62 * e, tail: 0, tongue: 1 }];
+    },
+    // Sitting, panting, tail going, one slow blink.
+    idle: (k, n) => {
+      const a = (k / n) * TAU;
+      const blink = k === n - 3 || k === n - 1 ? 0.6 : k === n - 2 ? 1 : 0;
+      return [{ sit: 1, wag: 0.85, pant: 1, lookYaw: -0.2, lookPitch: 0.08, tilt: Math.sin(a) * 0.08 }, { phase: 0, heading: -0.62, tail: Math.sin(a * 3) * 0.5, tongue: 1 + 0.1 * Math.sin(a * 4), blink }];
+    },
+  };
+
+  window.ready = true;
+  window.shot = (name, k, n) => {
+    const [pose, opt] = shots[name](k, n);
+    // Ear springs settle over a few steps, so the ears hang naturally in every frame.
+    for (let i = 0; i < 6; i++) step(pose, opt);
+    r.render(scene, cam);
+    return document.querySelector('#c').toDataURL('image/png');
+  };
+</script>

@@ -69,7 +69,10 @@ function gpuName(gl) {
   return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
 }
 
-export function startMonitor(world) {
+// opts is for pages where the 3D world is not always drawing (V2):
+//   raf: true    counts every browser frame, instead of only frames the world draws
+//   extra()      returns fields merged into each sample; `note` is shown in the panel
+export function startMonitor(world, opts = {}) {
   const r = world.renderer, gl = r.getContext();
   const timer = new GpuTimer(gl);
   const frames = [];
@@ -80,7 +83,7 @@ export function startMonitor(world) {
   world.probe = {
     begin() {
       const now = performance.now();
-      frames.push(now - last);
+      if (!opts.raf) frames.push(now - last);
       last = now;
       r.info.reset();
       timer.begin();
@@ -88,6 +91,15 @@ export function startMonitor(world) {
     end() { timer.end(); },
   };
   r.info.autoReset = false;
+  if (opts.raf) {
+    let prev = performance.now();
+    const tick = (now) => {
+      frames.push(now - prev);
+      prev = now;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
 
   const device = {
     gpu: gpuName(gl),
@@ -121,6 +133,7 @@ export function startMonitor(world) {
       programs: r.info.programs?.length ?? 0,
       dpr: +world.dpr.toFixed(2),
       level: world.quality.level,
+      ...opts.extra?.(),
     };
     samples.push(s);
     if (samples.length > 3600) samples.shift();
@@ -168,6 +181,7 @@ export function startMonitor(world) {
       `GPU memory est ${s.gpuEstMB}MB`,
       `JS memory ${s.heapMB == null ? na : `${s.heapMB}MB`}`,
       `${(s.triangles / 1000).toFixed(0)}k triangles   ${s.calls} draws`,
+      ...(s.note ? [s.note] : []),
     ].join('\n');
   }, 1000);
 }
