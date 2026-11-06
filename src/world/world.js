@@ -70,7 +70,8 @@ export class World {
     this.chapters = ['hero', ...events.map((e) => e.id), 'finale'];
     const step = (Math.PI * 2) / (events.length + 1);
     this.stops = [{ id: 'start', zone: 'start', phi: 0 }, ...events.map((e, i) => ({ id: e.id, zone: ZONES[e.id] ? e.id : 'start', phi: (i + 1) * step }))];
-    this.phis = [0, ...events.map((_, i) => (i + 1) * step), Math.PI * 2];
+    // Each event rests with its diorama dead centre on top, so it stands upright on screen.
+    this.phis = [0, ...events.map((_, i) => (i + 1) * step + 0.75 / R), Math.PI * 2];
 
     this.s = 0;           // chapter position, float
     this.introBlend = 0;  // 0 = intro close-up, 1 = scroll rig has the camera
@@ -288,18 +289,18 @@ export class World {
     }
     if (name === 'hero' || name === 'finale') {
       const hero = name === 'hero';
-      const dist = (hero ? 52 : 58) * clamp(0.98 / a, 1, 2.1);
+      const dist = (hero ? 52 : 58) * clamp(0.98 / a, 1, 1.7);
       const az = hero ? 0.82 : 0.95, el = hero ? 0.16 : 0.3;
       return {
         pos: [Math.sin(az) * dist, Math.sin(el) * dist, Math.cos(az) * dist], tgt: [0, 0, 0],
-        sx: 0, sy: portrait ? (hero ? -0.14 : -0.27) : (hero ? -0.3 : 0),
+        sx: 0, sy: portrait ? (hero ? -0.14 : 0.24) : (hero ? -0.3 : 0),
         sxWide: !portrait && !hero ? -0.2 : 0, wide: 1, blur: 0,
       };
     }
     const dist = 9.3 * fit;
     const tgt = [0, R + 1.5, -1.3];
     return {
-      pos: [tgt[0] + 0.3 * dist, tgt[1] + 0.13 * dist, tgt[2] + dist], tgt,
+      pos: [tgt[0] + 0.07 * dist, tgt[1] + 0.13 * dist, tgt[2] + dist], tgt,
       sx: portrait ? 0 : 0.19, sy: portrait ? 0.2 : 0.03, wide: 0, blur: this.high ? 3.4 : 0,
     };
   }
@@ -381,7 +382,9 @@ export class World {
     dog.tilt = damp(dog.tilt, moving ? 0 : Math.sin(t * 0.45) * 0.14, 3, dt);
     dog.crouch = damp(dog.crouch, 0, 6, dt);
     dog.lean = damp(dog.lean, 0, 6, dt);
-    dog.placeOnRing(R, 0, this.heading);
+    // At a stop the pup stands just left of the diorama, kept upright.
+    dog.placeOnRing(R, (-0.75 / R) * (1 - (this.wide ?? 0)), this.heading);
+    dog.root.rotation.z = 0;
     dog.update(dt, t);
   }
 
