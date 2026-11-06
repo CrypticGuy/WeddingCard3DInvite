@@ -16,6 +16,28 @@ export class PaintedWorld extends World {
     this.bleed = null;
     this.bleedT = 0;
     this.bleedZoom = 1;
+    this.spin = { az: 0, el: 0, vaz: 0, vel: 0, held: false };
+  }
+
+  // Quality can only lower this, never lift it past the phone cap.
+  get pixelRatio() { return this._ratio; }
+  set pixelRatio(v) { this._ratio = Math.min(v, this.ratioCap ?? 1); }
+
+  // Phones: 1.5 device pixels per CSS pixel at most, fewer small plants, and after the
+  // opening the shadow pass (which redraws every triangle) runs one frame in three.
+  easePhone() {
+    this.quality.apply(1, 'phone');
+    this.ratioCap = Math.min(1, 1.5 / Math.min(window.devicePixelRatio || 1, 2));
+    this.pixelRatio = this.ratioCap;
+    this.dpr = 0;
+    this.resize();
+    const map = this.renderer.shadowMap, world = this;
+    let wanted = false, tick = 0;
+    Object.defineProperty(map, 'needsUpdate', {
+      configurable: true,
+      get() { return wanted; },
+      set(v) { wanted = v && (!world.introOver || tick++ % 3 === 0); },
+    });
   }
 
   // Where the painted dog stands on screen, in CSS pixels.
@@ -24,7 +46,8 @@ export class PaintedWorld extends World {
   }
 
   pose(name) {
-    const close = !['intro', 'hero', 'finale'].includes(name);
+    if (name === 'finale') return this.spunPose(super.pose(name));
+    const close = !['intro', 'hero'].includes(name);
     if (!close) return super.pose(name);
     const { x, foot, h, w, H } = this.spot;
     // Same view direction as the sprite bake, at the distance that makes the sizes match.
@@ -40,6 +63,40 @@ export class PaintedWorld extends World {
     };
   }
 
+  // The reader's drag orbits the view, which looks like turning the globe in the hand
+  // and keeps the dog, sky and lighting consistent. No spin gives V1's pose exactly.
+  spunPose(base) {
+    const { az, el } = this.spin;
+    if (!az && !el) return base;
+    const [x, y, z] = base.pos, r = Math.hypot(x, y, z);
+    const a = Math.atan2(x, z) + az;
+    const e = Math.max(-1.2, Math.min(1.2, Math.asin(y / r) + el));
+    return { ...base, pos: [Math.sin(a) * Math.cos(e) * r, Math.sin(e) * r, Math.cos(a) * Math.cos(e) * r] };
+  }
+
+  // dx, dy: radians from a drag, or a flick's speed when `flick` is set.
+  turn(dx, dy) {
+    this.spin.az += dx;
+    this.spin.el = Math.max(-1.1, Math.min(0.9, this.spin.el + dy));
+  }
+
+  stepSpin(dt) {
+    const p = this.spin;
+    if (this.s < 4.96) {
+      // Leaving the finale: settle back, so the pull-out always retraces itself.
+      p.vaz = p.vel = 0;
+      const k = Math.exp(-5 * dt);
+      p.az = Math.abs(p.az) < 0.002 ? 0 : (((p.az + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI) * k;
+      p.el = Math.abs(p.el) < 0.002 ? 0 : p.el * k;
+      return;
+    }
+    if (p.held) return;
+    this.turn(p.vaz * dt, p.vel * dt);
+    const k = Math.exp(-2.2 * dt);
+    p.vaz *= k;
+    p.vel *= k;
+  }
+
   // Jumps the story position without the dog reacting to the leap.
   teleport(s) {
     this.s = s;
@@ -48,6 +105,7 @@ export class PaintedWorld extends World {
   }
 
   frame(dt, t) {
+    this.stepSpin(dt);
     super.frame(dt, t);
     this.bleed?.render(this.bleedT, this.bleedZoom);
   }

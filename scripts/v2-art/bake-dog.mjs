@@ -11,7 +11,7 @@ const page = await browser.newPage({ viewport: { width: 800, height: 700 } });
 page.on('pageerror', (e) => console.error(e.message));
 await page.goto('http://localhost:5199/scripts/v2-art/bake-dog.html');
 await page.waitForFunction(() => window.ready, null, { timeout: 60000 });
-const strips = { walk: 12, back: 12, settle: 6, idle: 16 };
+const strips = { walk: 18, back: 18, settle: 6, idle: 16 };
 for (const [name, n] of Object.entries(strips)) {
   for (let k = 0; k < n; k++) {
     const url = await page.evaluate(([a, b, c]) => window.shot(a, b, c), [name, k, n]);

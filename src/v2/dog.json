@@ -5,18 +5,18 @@
  "strips": {
   "walk": {
    "start": 0,
-   "n": 12
+   "n": 18
   },
   "back": {
-   "start": 12,
-   "n": 12
+   "start": 18,
+   "n": 18
   },
   "settle": {
-   "start": 24,
+   "start": 36,
    "n": 6
   },
   "idle": {
-   "start": 30,
+   "start": 42,
    "n": 16
   }
  },

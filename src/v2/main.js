@@ -129,9 +129,13 @@ if (!reduced) {
     flyers.push({ el: p, y: (k * 0.618) % 1, lag: (k * 0.381) % 1 * 0.45, size: 26 + ((k * 7) % 5) * 9, spin: 200 + ((k * 53) % 300) });
   }
 }
+let flying = false;
 function flyPetals(t) {
   const on = t > 0.02 && t < 0.98;
-  fly.style.visibility = on ? 'visible' : 'hidden';
+  if (on !== flying) {
+    flying = on;
+    fly.style.visibility = on ? 'visible' : 'hidden';
+  }
   if (!on) return;
   const { W, H } = stage;
   for (const f of flyers) {
@@ -191,6 +195,7 @@ function setCard(i) {
 // ── Painted part of the story, shared by the 3D and no-3D paths.
 let world = null, bleed = null;
 let snapFor = -1;
+let shownMode = '';
 let ySmooth = window.scrollY, vSmooth = 0, t = 0;
 
 function paintFrame(loc) {
@@ -198,6 +203,9 @@ function paintFrame(loc) {
   stage.window(i);
   stage.show(i);
   stage.update(p);
+  if (p > 0.6 && i < events.length - 1) stage.warm(i + 1, 0);
+  else if (p < 0.12 && i > 0) stage.warm(i - 1, 1);
+  else stage.warm(-1, 0);
   setCard(p > 0.17 && p < 0.62 ? i : -1);
   setChapter(i + 1, events[i].id);
 }
@@ -210,7 +218,7 @@ function stepStory(dt) {
   if (Math.abs(ySmooth - y) < 0.3) ySmooth = y;
   vSmooth = damp(vSmooth, (ySmooth - prev) / Math.max(dt, 0.001) / map.vh, 12, dt);
   const loc = locate(ySmooth);
-  html.dataset.mode = loc.mode;
+  if (loc.mode !== shownMode) html.dataset.mode = shownMode = loc.mode;
   runWipe(ySmooth);
   return loc;
 }
@@ -276,6 +284,7 @@ async function boot() {
   world = new PaintedWorld($('#gl'), events, { high });
   world.cardArt = art;
   await world.build(onStep);
+  if (mobile) world.easePhone();
   if (!withDog) {
     world.dog.root.visible = false;
     world.thread.mesh.visible = false;
@@ -301,6 +310,7 @@ async function boot() {
     },
     onDone: () => {
       introDone = true;
+      world.introOver = true;
       unlockScroll();
       $('#intro').remove();
     },
@@ -333,7 +343,7 @@ async function boot() {
     let t3d = -1;
     if (loc.mode === 'dive') {
       prepareBleed('first');
-      world.wake();
+      if (loc.u < 1) world.wake();
       // The camera arrives first, so the 3D dog is on its mark when the sprite takes over.
       const k = sstep(0.0, 0.5, loc.u);
       world.s = k;
@@ -345,7 +355,7 @@ async function boot() {
       setCard(-1);
     } else if (loc.mode === 'outro') {
       prepareBleed('last');
-      if (world.asleep || world.s < 3.5) { world.wake(); world.teleport(4); }
+      if (loc.u > 0 && (world.asleep || world.s < 3.5)) { world.wake(); world.teleport(4); }
       world.s = 4 + sstep(0.12, 1, loc.u);
       const b = 1 - clamp(loc.u / 0.72);
       world.bleedT = snapFor === 1 ? b : 0;
@@ -377,7 +387,40 @@ async function boot() {
     flyPetals(loc.mode === 'dive' ? t3d : 0);
     dog.update(dt, t, vSmooth);
     finaleEl.classList.toggle('on', loc.mode === 'outro' && loc.u > 0.86);
+    html.classList.toggle('globe', loc.mode === 'outro' && loc.u > 0.97);
   };
+
+  // The finale globe turns under a finger or a mouse, and keeps turning a little.
+  const spinEl = $('#spin');
+  let grab = null;
+  spinEl.addEventListener('pointerdown', (e) => {
+    spinEl.setPointerCapture(e.pointerId);
+    grab = { x: e.clientX, y: e.clientY, at: e.timeStamp, id: e.pointerId };
+    Object.assign(world.spin, { held: true, vaz: 0, vel: 0 });
+    html.classList.add('spun');
+  });
+  spinEl.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== grab?.id) return;
+    // A full swipe across the shorter side of the screen is about a half turn.
+    const k = Math.PI / Math.min(stage.W, stage.H);
+    const dx = -(e.clientX - grab.x) * k, dy = (e.clientY - grab.y) * k;
+    const gap = Math.max(e.timeStamp - grab.at, 1) / 1000;
+    world.turn(dx, dy);
+    world.spin.vaz = world.spin.vaz * 0.6 + (dx / gap) * 0.4;
+    world.spin.vel = world.spin.vel * 0.6 + (dy / gap) * 0.4;
+    Object.assign(grab, { x: e.clientX, y: e.clientY, at: e.timeStamp });
+  });
+  const letGo = (e) => {
+    if (e.pointerId !== grab?.id) return;
+    // A finger held still before lifting should not flick.
+    const still = e.timeStamp - grab.at > 90;
+    const cap = 7;
+    const fling = (v) => (still || reduced ? 0 : Math.max(-cap, Math.min(cap, v)));
+    Object.assign(world.spin, { held: false, vaz: fling(world.spin.vaz), vel: fling(world.spin.vel) });
+    grab = null;
+  };
+  spinEl.addEventListener('pointerup', letGo);
+  spinEl.addEventListener('pointercancel', letGo);
 
   // Same pacing rules as V1: smoothed time, and every other frame on 120Hz screens.
   let smooth = 1 / 60, elapsed = 0, minGap = 0;

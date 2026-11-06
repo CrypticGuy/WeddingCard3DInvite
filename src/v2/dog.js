@@ -81,7 +81,7 @@ export class PaintedDog {
         if (backward) { this.state = 'back'; break; }
         if (this.still > STILL_AFTER) { this.state = 'settle'; this.f = 0; break; }
         // Feet keep pace with the ground, within what still reads as a trot.
-        fps(Math.min(26, Math.max(9, Math.abs(v) * 42)));
+        fps(Math.min(26, Math.max(9, Math.abs(v) * 42)) * (meta.strips.walk.n / 12));
         this.draw('walk', this.f);
         break;
       case 'back': {
@@ -97,7 +97,7 @@ export class PaintedDog {
     }
     const low = this.state === 'back' ? 1 : 0;
     this.dip += (low - this.dip) * Math.min(1, dt * 6);
-    this.root.dataset.state = this.state;
+    if (this.state !== this.shownState) this.root.dataset.state = this.shownState = this.state;
     // Weight shifts with each hesitant step; never a flip, only a small nudge.
     if (this.reduced) return;
     const nudge = this.state === 'back' ? Math.sin(t * 2.3) * this.h * 0.012 : 0;
