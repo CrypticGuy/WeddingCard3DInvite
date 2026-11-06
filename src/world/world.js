@@ -5,7 +5,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { shared, clamp, lerp, sstep, damp, rng, soft } from './kit.js';
-import { R, ZONES, createTerrain, createGround, createFlora, dirAt } from './planet.js';
+import { R, ZONES, createTerrain, createGround, createFlora, createWater, dirAt } from './planet.js';
+import { Quality } from './quality.js';
 import { builders, place } from './props.js';
 import { Beagle } from './beagle.js';
 import { createEnvelope, Thread, CARD_H, CARD_W } from './envelope.js';
@@ -86,16 +87,17 @@ export class World {
     this.ticks = [];
     this.skyTicks = [];
     this.pixelRatio = 1;
-    this.slow = 0;
     this.frames = 0;
+    this.lastShadowTheta = 1e9;
   }
 
   async build(onStep = () => {}) {
     const pause = () => new Promise((r) => setTimeout(r, 0));
-    const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, powerPreference: 'high-performance' }));
+    const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: !this.high, powerPreference: 'high-performance' }));
     r.toneMapping = THREE.NoToneMapping;
     r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFShadowMap;
+    r.shadowMap.autoUpdate = false;   // redrawn only when something moves
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 800);
 
@@ -106,7 +108,9 @@ export class World {
     this.roll = new THREE.Group();
     this.scene.add(this.roll);
     this.terrain = createTerrain(this.stops);
-    this.roll.add(createGround(this.terrain, this.high ? 120 : 84));
+    this.roll.add(createGround(this.terrain, this.high ? 96 : 64));
+    this.water = createWater();
+    this.roll.add(this.water);
     onStep(0.3); await pause();
 
     // Dioramas first, so flowers know where not to grow.
@@ -135,7 +139,9 @@ export class World {
       for (const f of this.footprints) if (f.d.distanceTo(d) * R < f.r * k) return true;
       return false;
     };
-    this.roll.add(createFlora(this.terrain, this.stops, blocked, this.high));
+    const flora = createFlora(this.terrain, this.stops, blocked, this.high);
+    this.roll.add(flora.group);
+    this.nearFlora = flora.near;
     onStep(0.75); await pause();
 
     this.dog = new Beagle();
@@ -144,7 +150,7 @@ export class World {
     this.scene.add(this.hearts.group);
     this.burst = new Burst();
     this.scene.add(this.burst.mesh);
-    this.petals = ambientPetals(this.high ? 420 : 200);
+    this.petals = ambientPetals(this.high ? 300 : 90);
     this.scene.add(this.petals);
 
     this.skyObjects = createSkyObjects(this.high);
@@ -158,7 +164,10 @@ export class World {
     const knot = env.knotAnchor.getWorldPosition(new THREE.Vector3());
     this.thread.layOut(knot, new THREE.Vector3(0.42, R + 0.05, 0.24));
 
-    this.buildPost();
+    // Phones skip post-processing and draw straight to the screen with native
+    // anti-aliasing: far cheaper, and there is no off-screen buffer to go wrong.
+    if (this.high) this.buildPost();
+    this.quality = new Quality(this);
     this.resize();
     this.setMood(MOODS.intro);
     this.compile();
@@ -248,32 +257,39 @@ export class World {
     this.hemi.color.copy(m.hemiSky); this.hemi.groundColor.copy(m.hemiGround); this.hemi.intensity = m.hemiI;
     shared.uRim.value.copy(m.rim);
     this.stars.material.opacity = m.night;
+    this.water.material.uniforms.uSky.value.copy(m.mid);
+    this.water.material.uniforms.uLight.value = 1 - m.night * 0.3;
     this.scene.fog.color.copy(m.mid).lerp(m.bot, 0.5);
     this.petals.material.uniforms.uLight.value = 1 - m.night * 0.35;
-    const glow = 0.62 + 0.4 * sstep(0.1, 0.9, m.night);
+    const glow = (this.high ? 0.62 : 0.72) + 0.4 * sstep(0.1, 0.9, m.night);
     this.lanternMat.color.setRGB(1.2 * glow, 0.8 * glow, 0.66 * glow);
     this.bulbMat.color.setScalar(0.85 + 0.42 * m.night);
   }
 
-  blendMood(a, b, t) {
-    const o = (this._m ||= mood('#fff', '#fff', '#fff', '#fff', 1, '#fff', '#fff', 1, '#fff'));
+  blendMood(a, b, t, slot = '_m') {
+    const o = (this[slot] ||= mood('#fff', '#fff', '#fff', '#fff', 1, '#fff', '#fff', 1, '#fff'));
     for (const k of ['top', 'mid', 'bot', 'sun', 'hemiSky', 'hemiGround', 'rim']) o[k].copy(a[k]).lerp(b[k], t);
     for (const k of ['sunI', 'hemiI', 'night']) o[k] = lerp(a[k], b[k], t);
     return o;
   }
 
   resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    // The canvas is sized to the tallest viewport in CSS, so a phone's address bar
+    // sliding away changes nothing here and costs nothing.
+    const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.pixelRatio;
+    if (w === this.w && h === this.h && dpr === this.dpr) return;
     this.w = w; this.h = h;
     this.aspect = w / h;
-    const dpr = Math.min(window.devicePixelRatio || 1, this.high ? 2 : 1.6) * this.pixelRatio;
     this.dpr = dpr;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h, false);
-    this.composer.setPixelRatio(dpr);
-    this.composer.setSize(w, h);
+    if (this.composer) {
+      this.composer.setPixelRatio(dpr);
+      this.composer.setSize(w, h);
+      this.post.uniforms.uRes.value.set(w * dpr, h * dpr);
+    }
     this.camera.aspect = this.aspect;
-    this.post.uniforms.uRes.value.set(w * dpr, h * dpr);
     this.camera.updateProjectionMatrix();
   }
 
@@ -340,13 +356,19 @@ export class World {
     this.camera.lookAt(tgt);
     const W = this.w, H = this.h;
     this.camera.setViewOffset(W, H, sx * W, sy * H, W, H);
-    this.post.uniforms.uBlur.value = blur * this.dpr;
-    this.post.uniforms.uFocus.value = 0.5 + sy * -1 + (this.aspect < 0.9 ? -0.02 : -0.05);
+    if (this.post) {
+      this.post.uniforms.uBlur.value = blur * this.dpr;
+      this.post.uniforms.uFocus.value = 0.5 + sy * -1 + (this.aspect < 0.9 ? -0.02 : -0.05);
+    }
+    // Small plants leave as the camera does, before they shrink below a pixel.
+    shared.uGrow.value = 1 - sstep(0.25, 0.7, wide);
+    this.nearFlora.visible = shared.uGrow.value > 0.01;
+    if (!this.high) this.petals.visible = wide < 0.5;
     this.scene.fog.near = lerp(15, 90, wide);
     this.scene.fog.far = lerp(58, 260, wide);
     this.petals.material.uniforms.uCenter.value.lerpVectors(tgt, this.camera.position, 0.35);
     this.petals.material.uniforms.uBox.value = lerp(15, 46, wide);
-    this.petals.material.uniforms.uSize.value = lerp(0.08, 0.2, wide);
+    this.petals.material.uniforms.uSize.value = lerp(0.08, 0.16, wide);
   }
 
   applyMood() {
@@ -354,7 +376,7 @@ export class World {
     const s = clamp(this.s, 0, n - 1);
     const i = Math.min(Math.floor(s), n - 2), f = s - i;
     const m = this.blendMood(MOODS[this.chapters[i]] || MOODS.hero, MOODS[this.chapters[i + 1]] || MOODS.hero, sstep(0.1, 0.9, f));
-    this.setMood(this.introBlend < 1 ? this.blendMood(MOODS.intro, { ...m }, smoother(this.introBlend)) : m);
+    this.setMood(this.introBlend < 1 ? this.blendMood(MOODS.intro, m, smoother(this.introBlend), '_m2') : m);
   }
 
   updateDog(dt, t) {
@@ -371,16 +393,20 @@ export class World {
     const sp = Math.abs(this.speed) * R;
     const moving = sstep(0.12, 0.5, sp);
     dog.walk = damp(dog.walk, moving, 8, dt);
-    dog.gait = clamp(sp * 6.2, 6, 26);
+    // Reversing, a dog does not turn round. It keeps facing forward and shuffles
+    // back in slow, hesitant steps with its head low.
+    const backing = sp > 0.14 && this.speed < 0;
+    this.back = damp(this.back ?? 0, backing ? 1 : 0, 6, dt);
+    dog.gait = backing ? -(2.4 + 3 * (0.5 + 0.5 * Math.sin(t * 2.3))) : clamp(sp * 6.2, 6, 26);
     dog.sit = damp(dog.sit, 1 - sstep(0.04, 0.3, sp), 7, dt);
-    dog.wag = damp(dog.wag, moving ? 0.55 : 0.85, 3, dt);
+    dog.wag = damp(dog.wag, backing ? 0.18 : moving ? 0.55 : 0.85, 3, dt);
     dog.pant = damp(dog.pant, 1, 3, dt);
-    const want = sp > 0.14 ? (this.speed > 0 ? 0 : -Math.PI) : -0.62;
+    const want = sp > 0.14 ? 0 : -0.62;
     this.heading = damp(this.heading, want, 7, dt);
-    dog.lookYaw = damp(dog.lookYaw, moving ? 0 : -0.2 + this.pointerS.x * 0.3, 4, dt);
-    dog.lookPitch = damp(dog.lookPitch, this.pointerS.y * -0.14 + 0.08 * (1 - moving), 4, dt);
+    dog.lookYaw = damp(dog.lookYaw, backing ? -0.45 : moving ? 0 : -0.2 + this.pointerS.x * 0.3, 4, dt);
+    dog.lookPitch = damp(dog.lookPitch, backing ? -0.16 : this.pointerS.y * -0.14 + 0.08 * (1 - moving), 4, dt);
     dog.tilt = damp(dog.tilt, moving ? 0 : Math.sin(t * 0.45) * 0.14, 3, dt);
-    dog.crouch = damp(dog.crouch, 0, 6, dt);
+    dog.crouch = damp(dog.crouch, this.back * 0.42, 6, dt);
     dog.lean = damp(dog.lean, 0, 6, dt);
     // At a stop the pup stands just left of the diorama, kept upright.
     dog.placeOnRing(R, (-0.75 / R) * (1 - (this.wide ?? 0)), this.heading);
@@ -407,7 +433,7 @@ export class World {
 
   frame(dt, t) {
     shared.uTime.value = t;
-    this.post.uniforms.uTime.value = t % 10;
+    if (this.post) this.post.uniforms.uTime.value = t % 10;
     this.petals.material.uniforms.uTime.value = t;
     this.pointerS.x = damp(this.pointerS.x, this.pointer.x, 3, dt);
     this.pointerS.y = damp(this.pointerS.y, this.pointer.y, 3, dt);
@@ -438,8 +464,18 @@ export class World {
       if (this.thread.hasA) this.env.knotAnchor.getWorldPosition(this.thread.pinA);
       this.thread.update(dt);
     }
-    this.composer.render(dt);
-    this.watchPerf(dt);
+    this.frames++;
+    // Shadows only change when the planet turns or the pup is performing.
+    const turned = Math.abs(this.theta - this.lastShadowTheta) > 0.0008;
+    if (turned || this.introBlend < 1 || this.frames % 10 === 0) {
+      this.renderer.shadowMap.needsUpdate = true;
+      this.lastShadowTheta = this.theta;
+    }
+    this.probe?.begin();
+    if (this.composer) this.composer.render(dt);
+    else this.renderer.render(this.scene, this.camera);
+    this.probe?.end();
+    this.quality.update(dt, this.s);
   }
 
   detachCard() {
@@ -450,7 +486,7 @@ export class World {
   }
 
   updateCard() {
-    if (!this.cardFree) return;
+    if (!this.cardFree || this.cardDone) return;
     const c = this.env.card, cam = this.camera;
     const { cardFly: k, cardExit: x } = this.intro;
     const fov = THREE.MathUtils.degToRad(cam.fov);
@@ -467,18 +503,7 @@ export class World {
     c.rotateZ(x * 0.35 + Math.sin(k * Math.PI) * -0.12);
     c.rotateY(Math.sin(k * Math.PI) * 0.35);
     c.scale.setScalar(lerp(this.cardFrom.s, scale, k));
-    c.visible = x < 0.99;
-  }
-
-  watchPerf(dt) {
-    this.frames++;
-    if (this.frames < 40) return;
-    this.slow = dt > 0.03 ? this.slow + 1 : Math.max(0, this.slow - 0.5);
-    if (this.slow > 45) {
-      this.slow = 0;
-      if (this.pixelRatio > 0.6) { this.pixelRatio *= 0.8; this.resize(); }
-      else if (this.bloom.enabled) this.bloom.enabled = false;
-    }
+    if (x >= 0.99) { c.visible = false; this.cardDone = true; }
   }
 }
 

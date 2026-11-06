@@ -41,6 +41,7 @@ export const shared = {
   uTime: { value: 0 },
   uRim: { value: new THREE.Color('#fff0f4') },
   uRimK: { value: 0.35 },
+  uGrow: { value: 1 },   // small plants shrink away as the camera leaves the surface
 };
 
 const RIM = `float rimF = pow(1.0 - saturate(dot(normalize(vViewPosition), normal)), 2.6);
@@ -64,14 +65,16 @@ export function soft(opts = {}) {
 export const vertexSoft = (opts = {}) => soft({ vertexColors: true, ...opts });
 
 // Instanced plants: per-vertex aTint (1 = takes instance colour) and aSway (wind weight).
-export function windMaterial(opts = {}) {
+export function windMaterial(opts = {}, grow = false) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, ...opts });
+  mat.customProgramCacheKey = () => (grow ? 'wind-grow' : 'wind');
   mat.onBeforeCompile = (s) => {
     s.uniforms.uTime = shared.uTime;
+    s.uniforms.uGrow = shared.uGrow;
     s.uniforms.uRim = shared.uRim;
     s.uniforms.uRimK = shared.uRimK;
     s.vertexShader = s.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aTint; attribute float aSway; uniform float uTime;')
+      .replace('#include <common>', '#include <common>\nattribute float aTint; attribute float aSway; uniform float uTime; uniform float uGrow;')
       .replace(
         '#include <color_vertex>',
         `#include <color_vertex>
@@ -82,6 +85,7 @@ export function windMaterial(opts = {}) {
       .replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+         ${grow ? 'transformed *= uGrow;' : ''}
          vec3 wOrigin = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
          float wPh = dot(wOrigin, vec3(1.3, 0.9, 1.1));
          transformed.x += sin(uTime * 1.6 + wPh) * aSway * 0.09;
@@ -132,7 +136,14 @@ export class Bag {
     return this;
   }
   ball(p, r, color, s = [1, 1, 1], detail = 2, gradientTo) {
-    return this.add(new THREE.IcosahedronGeometry(r, detail), color, xf(p, [0, 0, 0], s), gradientTo);
+    const small = r < 0.075;
+    const g = new THREE.IcosahedronGeometry(r, small ? 0 : detail);
+    if (small) {
+      // At this size a plain icosahedron reads as round if its normals are smooth.
+      const pos = g.attributes.position, nor = g.attributes.normal, v = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).normalize(); nor.setXYZ(i, v.x, v.y, v.z); }
+    }
+    return this.add(g, color, xf(p, [0, 0, 0], s), gradientTo);
   }
   cyl(p, rt, rb, h, color, r = [0, 0, 0], seg = 14, gradientTo) {
     return this.add(new THREE.CylinderGeometry(rt, rb, h, seg), color, xf(p, r), gradientTo);

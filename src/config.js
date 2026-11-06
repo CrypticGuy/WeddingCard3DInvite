@@ -7,9 +7,10 @@ export const invite = {
   couple: { first: 'Parushi', second: 'Rishabh' },
   timeZone: 'Asia/Kolkata',
 
-  // Optional recording. Put the file in public/ and name it here, for example
-  // 'music.mp3'. Leave empty to use the built-in tanpura and bansuri score.
-  music: '',
+  // Background music, from public/v1/music. Licence details are in CREDITS.md there,
+  // and this recording needs its credit line kept. Leave music empty for silence.
+  music: 'music/nadaswaram-thavil.mp3',
+  musicCredit: 'Music: nadaswaram and thavil, recorded by Vis M. <a href="https://commons.wikimedia.org/wiki/File:Thakil_%26_Nadaswaram_during_temple_Deeparadhana.ogg" target="_blank" rel="noopener">CC BY 4.0</a>',
 
   // Envelope + card wording
   envelopeLine: "You're invited",

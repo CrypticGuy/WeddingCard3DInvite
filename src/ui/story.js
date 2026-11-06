@@ -125,6 +125,7 @@ export function renderStory(root) {
         <button class="btn ghost" type="button" data-go="0">Back to the start</button>
       </div>
       <p class="note r5">${esc(invite.closingNote)}</p>
+      ${invite.musicCredit ? `<p class="credit r5">${invite.musicCredit}</p>` : ''}
     </div>
   </section>`;
 }

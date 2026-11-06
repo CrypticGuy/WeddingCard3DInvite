@@ -15,6 +15,9 @@ const params = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const audio = new Music(invite.music);
 
+// Reached from the versions page: offer the way back. Guests never see this.
+$('#versions').hidden = !params.has('review');
+
 const story = $('#story');
 renderStory(story);
 startCountdown(story);
@@ -60,12 +63,11 @@ document.addEventListener('click', (e) => {
 });
 
 const soundBtn = $('#sound');
+soundBtn.hidden = !invite.music;
 soundBtn.addEventListener('click', () => {
-  audio.unlock();
   const on = audio.toggle();
   soundBtn.setAttribute('aria-pressed', String(on));
   soundBtn.setAttribute('aria-label', on ? 'Mute music' : 'Play music');
-  if (on) audio.startMusic();
 });
 
 function unlockScroll() {
@@ -117,6 +119,7 @@ async function boot() {
   await world.build(onStep);
 
   addEventListener('resize', () => world.resize());
+  if (params.has('perf')) import('./perf/monitor.js').then((m) => m.startMonitor(world));
   addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;
     world.pointer.set((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
@@ -136,20 +139,35 @@ async function boot() {
   });
 
   // Render loop
-  let last = performance.now(), t = 0;
+  let t = 0, smooth = 1 / 60;
   let target = 0;
-  const loop = (now) => {
-    const dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
+  const loop = (rawMs) => {
+    // Smoothed, so one late frame cannot jolt the camera or the planet.
+    smooth += (Math.min(0.05, rawMs / 1000) - smooth) * 0.2;
+    const dt = smooth;
     t += dt;
     if (!html.classList.contains('locked')) {
       target = scrollChapter();
       setActive(clamp(Math.round(target), 0, chapters.length - 1));
     }
-    world.s = reduced ? target : damp(world.s, target, 5.5, dt);
+    // Going back is slower: the planet eases round at the pup's shuffling pace.
+    world.s = reduced ? target : damp(world.s, target, target < world.s ? 1.7 : 5.5, dt);
     world.frame(dt, t);
   };
-  gsap.ticker.add(() => loop(performance.now()));
+  // 120Hz screens draw every other frame: same smoothness here, half the heat.
+  let elapsed = 0, minGap = 0;
+  const gaps = [];
+  gsap.ticker.add((time, deltaMs) => {
+    if (gaps.length < 60) {
+      gaps.push(deltaMs);
+      // The median ignores the slow frames that happen while the page settles.
+      if (gaps.length === 60 && [...gaps].sort((a, b) => a - b)[30] < 10) minGap = 12;
+    }
+    elapsed += deltaMs;
+    if (elapsed < minGap) return;
+    loop(elapsed);
+    elapsed = 0;
+  });
   gsap.ticker.lagSmoothing(0);
 
   // Tap the pup for hearts
@@ -171,14 +189,12 @@ async function boot() {
   const introEl = $('#intro');
   introEl.classList.add('ready');
   $('#tap').addEventListener('click', () => {
-    audio.unlock();
-    audio.startMusic();
+    audio.start();
     introEl.classList.add('started');
     intro.start();
   });
   $('#skip').addEventListener('click', () => {
-    audio.unlock();
-    audio.startMusic();
+    audio.start();
     intro.skip();
   });
   introEl.addEventListener('click', (e) => {

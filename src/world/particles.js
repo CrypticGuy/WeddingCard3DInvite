@@ -109,10 +109,12 @@ export class Burst {
   }
   update(dt, t) {
     if (!this.mesh.count) return;
+    let alive = 0;
     for (let i = 0; i < this.mesh.count; i++) {
       const it = this.items[i];
       if (!it) continue;
       it.life += dt;
+      if (it.life <= it.ttl) alive++;
       const k = Math.exp(-2.1 * dt);
       it.v.multiplyScalar(k);
       it.v.y -= 1.1 * dt;
@@ -126,6 +128,8 @@ export class Burst {
       this.mesh.setMatrixAt(i, this.m);
     }
     this.mesh.instanceMatrix.needsUpdate = true;
+    // Every petal has landed, so stop paying for them.
+    if (!alive) { this.mesh.count = 0; this.items.length = 0; this.head = 0; }
   }
 }
 
@@ -208,11 +212,11 @@ export function createSkyObjects(q) {
   const r = rng(404);
   const geos = [cloudGeo(2), cloudGeo(8), cloudGeo(15)];
   const cloudMat = vertexSoft({ roughness: 1, emissive: '#fff4f6', emissiveIntensity: 0.12 });
-  const n = q ? 18 : 12;
+  const n = q ? 14 : 9;
   const clouds = new THREE.Group();
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(geos[i % 3], cloudMat);
-    const a = (i / n) * Math.PI * 2 + r() * 0.3, rad = R + 4.6 + r() * 3.6, z = -2.5 - r() * 7;
+    const a = (i / n) * Math.PI * 2 + r() * 0.3, rad = R + 7.5 + r() * 3.5, z = -4 - r() * 6;
     m.position.set(Math.cos(a) * rad, Math.sin(a) * rad, z);
     m.rotation.z = a - Math.PI / 2;
     m.rotation.y = (r() - 0.5) * 0.5;

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invite Performance Report</title>
+<style>
+/* Layout: summary first, then one small chart per measure on a shared time axis. */
+:root {
+  --surface: #fcfcfb; --page: #f4f3f1; --text: #0b0b0b; --text2: #52514e; --grid: #e6e5e1; --line: #d6d5d0;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --surface: #1a1a19; --page: #121211; --text: #f0efec; --text2: #c3c2b7; --grid: #2d2d2b; --line: #3a3a37;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  color-scheme: dark;
+} }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.5 system-ui, 'Segoe UI', sans-serif; padding: 24px max(16px, 3vw) 48px; }
+main { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+h1 { font-size: 26px; margin: 0; } h2 { font-size: 17px; margin: 0 0 8px; }
+p { margin: 0; } .sub { color: var(--text2); }
+section { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 6px 12px 6px 0; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 500; color: var(--text2); font-size: 13px; }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--text2); }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px; }
+.chart { position: relative; min-width: 0; }
+.chart h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.chart p { font-size: 12.5px; color: var(--text2); min-height: 2.6em; }
+svg { display: block; width: 100%; height: auto; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; font-size: 12px; white-space: nowrap; z-index: 2; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+ul { margin: 0; padding-left: 18px; } li { margin-bottom: 4px; }
+textarea { width: 100%; height: 72px; font: 12px ui-monospace, Consolas, monospace; background: var(--page); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--page); color: var(--text); cursor: pointer; margin-top: 8px; }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+#pasteMsg { font-size: 13px; color: var(--text2); margin-left: 10px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Invite performance report</h1>
+    <p class="sub" id="meta"></p>
+  </header>
+  <section>
+    <h2>Summary</h2>
+    <div class="scroll"><table id="summary"></table></div>
+  </section>
+  <section>
+    <div class="legend" id="legend"></div>
+    <div class="charts" id="charts" style="margin-top:12px"></div>
+  </section>
+  <section>
+    <h2>Add a real phone</h2>
+    <p class="sub">Open the site on the phone with <code>?perf</code> at the end of the address, use it for a few minutes, tap Copy report, then paste it here.</p>
+    <label for="paste" hidden>Report from a phone</label>
+    <textarea id="paste" placeholder="Paste the copied report here"></textarea>
+    <button type="button" id="add">Add to report</button><span id="pasteMsg" role="status"></span>
+  </section>
+  <section>
+    <h2>How far to trust these numbers</h2>
+    <ul>
+      <li><b>Frame rate and frame times</b> are real, but for this computer. Emulation slows the CPU and cannot slow the GPU, so a real phone will be slower when the GPU is the limit. Use the Add a real phone box for true figures.</li>
+      <li><b>GPU memory</b> is an estimate that adds up everything the invite uploads. Drivers add overhead on top.</li>
+      <li><b>JS memory</b> is exact in Chrome. iPhones do not report it, so it is blank in pasted iPhone reports.</li>
+      <li><b>Page RAM and GPU process RAM</b> are real measurements of Chrome's processes on this computer. They show trends and leaks well, but a phone's absolute figures will differ.</li>
+      <li><b>Triangles</b> and <b>draw calls</b> are exact on every device. Peaks happen on frames that also redraw shadows.</li>
+      <li><b>A leak</b> shows up as JS memory or RAM climbing steadily without levelling off.</li>
+    </ul>
+  </section>
+</main>
+<script>
+const DATA = /*DATA*/null;
+const runs = DATA.runs.slice();
+const COLORS = ['--s1', '--s2', '--s3', '--s4', '--s5'];
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const color = (i) => css(COLORS[i % COLORS.length]);
+const METRICS = [
+  { key: 'fps', title: 'Frames per second', note: 'Higher is better. Steady matters more than peak.', unit: 'fps' },
+  { key: 'frameP95', title: 'Slow-frame time (95th percentile)', note: 'Lower is better. Above 33ms looks choppy.', unit: 'ms' },
+  { key: 'heapMB', title: 'JS memory', note: 'A steady climb would mean a leak.', unit: 'MB' },
+  { key: 'gpuEstMB', title: 'GPU memory (estimate)', note: 'Everything uploaded to the GPU. Should stay flat.', unit: 'MB' },
+  { key: 'hostRam', title: 'Page RAM', note: 'Measured on this computer, not a phone.', unit: 'MB' },
+  { key: 'hostGpu', title: 'GPU process RAM', note: 'Measured on this computer, not a phone.', unit: 'MB' },
+  { key: 'triangles', title: 'Triangles per frame', note: 'Rises in close-ups, falls on the globe.', unit: '' },
+  { key: 'level', title: 'Quality level', note: '0 is full quality. Should rarely move.', unit: '' },
+];
+const fmt = (v, unit) => v == null ? 'n/a' : (Math.abs(v) >= 10000 ? `${(v / 1000).toFixed(0)}k` : `${+v.toFixed(1)}`) + (unit ? ` ${unit}` : '');
+const vals = (r, k) => r.samples.map((s) => s[k]).filter((v) => v != null);
+const avg = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const pct = (a, p) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length * p)]; };
+const slope = (r, k) => {
+  const pts = r.samples.filter((s) => s[k] != null);
+  // Garbage collection makes short runs look like big swings, so require two minutes.
+  if (pts.length < 10 || pts[pts.length - 1].t - pts[0].t < 120) return null;
+  const a = pts.slice(Math.floor(pts.length * .2)), n = a.length;
+  const mx = avg(a.map((p) => p.t)), my = avg(a.map((p) => p[k]));
+  const num = a.reduce((s, p) => s + (p.t - mx) * (p[k] - my), 0), den = a.reduce((s, p) => s + (p.t - mx) ** 2, 0);
+  return den ? (num / den) * 60 : null;
+};
+
+function summary() {
+  const head = ['Device', 'Median fps', 'Worst 5% fps', 'Slow frame', 'Long frames', 'JS memory', 'Memory trend', 'GPU memory', 'Peak triangles', 'Quality changes'];
+  const rows = runs.map((r, i) => {
+    const f = vals(r, 'fps'), sl = slope(r, 'heapMB');
+    return `<tr><td><span class="key" style="background:${color(i)}"></span>${r.name}</td>
+      <td>${fmt(pct(f, .5))}</td><td>${fmt(pct(f, .05))}</td><td>${fmt(pct(vals(r, 'frameP95'), .5), 'ms')}</td>
+      <td>${vals(r, 'longFrames').reduce((a, b) => a + b, 0)}</td>
+      <td>${fmt(pct(vals(r, 'heapMB'), .95), 'MB')}</td><td>${sl == null ? 'run longer' : `${sl >= 0 ? '+' : ''}${sl.toFixed(2)} MB/min`}</td>
+      <td>${fmt(pct(vals(r, 'gpuEstMB'), .95), 'MB')}</td><td>${fmt(Math.max(0, ...vals(r, 'triangles')))}</td>
+      <td>${(r.qualityChanges ?? []).length}</td></tr>`;
+  }).join('');
+  document.querySelector('#summary').innerHTML = `<thead><tr>${head.map((h) => `<th scope="col">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody>`;
+}
+
+function chart(m) {
+  const W = 340, H = 150, L = 44, R = 10, T = 8, B = 22;
+  const box = document.createElement('div');
+  box.className = 'chart';
+  const series = runs.map((r, i) => ({ i, name: r.name, pts: r.samples.filter((s) => s[m.key] != null) })).filter((s) => s.pts.length);
+  box.innerHTML = `<h3>${m.title}</h3><p>${m.note}</p>`;
+  if (!series.length) { box.insertAdjacentHTML('beforeend', '<p>Not available on these devices.</p>'); return box; }
+  const all = series.flatMap((s) => s.pts.map((p) => p[m.key]));
+  const maxT = Math.max(...series.flatMap((s) => s.pts.map((p) => p.t)));
+  const top = Math.max(...all) * 1.08 || 1;
+  const x = (t) => L + (t / maxT) * (W - L - R), y = (v) => T + (1 - v / top) * (H - T - B);
+  let g = '';
+  for (let k = 0; k <= 3; k++) {
+    const v = (top / 3) * k, yy = y(v);
+    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${css('--grid')}"/><text x="${L - 5}" y="${yy + 3.5}" text-anchor="end" font-size="10" fill="${css('--text2')}">${fmt(v)}</text>`;
+  }
+  g += `<text x="${L}" y="${H - 6}" font-size="10" fill="${css('--text2')}">0s</text><text x="${W - R}" y="${H - 6}" text-anchor="end" font-size="10" fill="${css('--text2')}">${maxT}s</text>`;
+  const lines = series.map((s) => `<polyline fill="none" stroke="${color(s.i)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${s.pts.map((p) => `${x(p.t).toFixed(1)},${y(p[m.key]).toFixed(1)}`).join(' ')}"/>`).join('');
+  box.insertAdjacentHTML('beforeend', `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${m.title} over time">${g}${lines}<line class="cross" y1="${T}" y2="${H - B}" stroke="${css('--text2')}" stroke-dasharray="3 3" visibility="hidden"/></svg><div class="tip"></div>`);
+  const svg = box.querySelector('svg'), tip = box.querySelector('.tip'), cross = box.querySelector('.cross');
+  svg.addEventListener('pointermove', (e) => {
+    const b = svg.getBoundingClientRect(), sx = ((e.clientX - b.left) / b.width) * W;
+    const t = Math.max(0, Math.min(maxT, ((sx - L) / (W - L - R)) * maxT));
+    cross.setAttribute('x1', x(t)); cross.setAttribute('x2', x(t)); cross.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<b>${Math.round(t)}s</b><br>` + series.map((s) => {
+      const p = s.pts.reduce((a, c) => Math.abs(c.t - t) < Math.abs(a.t - t) ? c : a);
+      return `<span class="key" style="background:${color(s.i)}"></span>${s.name}: ${fmt(p[m.key], m.unit)}`;
+    }).join('<br>');
+    tip.style.display = 'block';
+    const left = e.clientX - box.getBoundingClientRect().left;
+    tip.style.left = `${left > box.clientWidth / 2 ? left - tip.offsetWidth - 12 : left + 12}px`;
+    tip.style.top = '44px';
+  });
+  svg.addEventListener('pointerleave', () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); });
+  return box;
+}
+
+function render() {
+  document.querySelector('#meta').textContent = `Version ${DATA.version}, ${DATA.seconds}s per device, created ${new Date(DATA.created).toLocaleString()}. Emulated phones run on: ${DATA.runs[0]?.device?.gpu ?? 'unknown GPU'}.`;
+  summary();
+  document.querySelector('#legend').innerHTML = runs.map((r, i) => `<span><span class="key" style="background:${color(i)}"></span>${r.name}</span>`).join('');
+  const c = document.querySelector('#charts');
+  c.innerHTML = '';
+  METRICS.forEach((m) => c.append(chart(m)));
+}
+
+document.querySelector('#add').addEventListener('click', () => {
+  const msg = document.querySelector('#pasteMsg');
+  try {
+    const r = JSON.parse(document.querySelector('#paste').value);
+    if (!r.samples?.length) throw new Error();
+    if (runs.length >= COLORS.length) { msg.textContent = 'This report holds five devices at most.'; return; }
+    runs.push({ name: `Real phone ${runs.length - DATA.runs.length + 1}`, device: r.device, qualityChanges: r.qualityChanges, samples: r.samples });
+    document.querySelector('#paste').value = '';
+    msg.textContent = `Added: ${r.device?.gpu ?? 'phone'}`;
+    render();
+  } catch { msg.textContent = 'That is not a report. Copy it again from the phone.'; }
+});
+render();
+</script>
+</body>
+</html>

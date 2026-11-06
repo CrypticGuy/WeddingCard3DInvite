@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { fbm, noise3, sstep, lerp, rng, paint, vertexSoft, windMaterial, xf, Bag } from './kit.js';
+import { fbm, sstep, rng, paint, shared, vertexSoft, windMaterial, xf, Bag } from './kit.js';
 import { sdfGeometry, smin, sphere } from './sdf.js';
 
 export const R = 9;
@@ -37,7 +37,9 @@ export function createTerrain(stops) {
     }
     const hills = (fbm(d.x * 2.1 + 3, d.y * 2.1, d.z * 2.1) - 0.5) * 2.6;
     const poles = sstep(4, 8.5, z) * (fbm(d.x * 3.1, d.y * 3.1 + 7, d.z * 3.1) - 0.32) * 2.1;
-    return (hills + poles) * flat;
+    // Lakes fill the far side of the planet, well away from the path and dioramas.
+    const lake = sstep(0.5, 0.58, fbm(d.x * 2.3 + 7, d.y * 2.3 - 3, d.z * 2.3 + 1)) * sstep(3.6, 5.4, z) * flat;
+    return (hills + poles) * flat * (1 - lake) - lake * 0.6;
   }
 
   const ca = new THREE.Color(), cb = new THREE.Color();
@@ -73,6 +75,18 @@ export function createTerrain(stops) {
     // Sunny patches, like light through a watercolour wash
     ca.set('#fff6d6');
     out.lerp(ca, sstep(0.56, 0.72, n) * 0.26);
+    // Flower drifts are painted into the ground. From orbit this reads as a meadow
+    // with none of the sparkle that thousands of tiny plants cause.
+    const dn = fbm(d.x * 8 + 11, d.y * 8, d.z * 8);
+    const drift = sstep(0.5, 0.6, dn) * sstep(0.1, 0.3, Math.abs(d.z));
+    if (drift > 0) {
+      const pal = ZONES[nearestZone(d).zone].flowers;
+      ca.set(pal[Math.floor(fbm(d.x * 4, d.y * 4 + 5, d.z * 4) * 9) % pal.length]);
+      out.lerp(ca, drift * 0.62);
+    }
+    // Pale sand where the land meets the water
+    ca.set('#fdeed6');
+    out.lerp(ca, sstep(-0.01, -0.12, height(d)) * 0.85);
     // The path itself
     const phi = Math.atan2(d.x, d.y);
     const z = d.z * R + Math.sin(phi * 7) * 0.07 + Math.sin(phi * 17) * 0.03;
@@ -159,7 +173,7 @@ function plant(parts) {
 }
 
 function blade(h, w, bend) {
-  const seg = 3, pos = [], idx = [], nor = [];
+  const seg = 2, pos = [], idx = [], nor = [];
   for (let i = 0; i <= seg; i++) {
     const t = i / seg, ww = w * (1 - t * t), y = h * t, z = bend * t * t;
     pos.push(-ww / 2, y, z, ww / 2, y, z);
@@ -175,74 +189,81 @@ function blade(h, w, bend) {
 
 function tuftGeo() {
   const r = rng(5), parts = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) {
     const a = r() * 6.28, rad = r() * 0.09;
     parts.push({
-      geo: blade(0.2 + r() * 0.2, 0.055, 0.05 + r() * 0.1), color: '#b8bcb0', to: '#ffffff', tint: 1,
+      geo: blade(0.2 + r() * 0.2, 0.07, 0.05 + r() * 0.1), color: '#dfe6d2', to: '#ffffff', tint: 1,
       m: xf([Math.cos(a) * rad, 0, Math.sin(a) * rad], [0, r() * 6.28, 0]),
     });
   }
   return plant(parts);
 }
 
+// One flat scalloped fan is a whole flower head: about 25 triangles, where the old
+// version spent 80 on every single petal.
+function bloom(petals, radius, cup, lobe = 0.62) {
+  const n = petals * 4, pos = [0, 0, 0], nor = [0, 1, 0], idx = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const rr = radius * (1 - lobe + lobe * Math.pow(Math.abs(Math.sin((a * petals) / 2)), 0.55));
+    pos.push(Math.cos(a) * rr, cup * (rr / radius) ** 2, Math.sin(a) * rr);
+    const l = Math.hypot(cup * 1.4, 1);
+    nor.push((-Math.cos(a) * cup * 1.4) / l, 1 / l, (-Math.sin(a) * cup * 1.4) / l);
+  }
+  for (let i = 1; i <= n; i++) idx.push(0, (i % n) + 1, i);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setIndex(idx);
+  return g;
+}
+
 function stem(h) {
-  return { geo: new THREE.CylinderGeometry(0.009, 0.014, h, 5), color: '#7cc08b', to: '#9ad7a0', m: xf([0, h / 2, 0]) };
+  return { geo: new THREE.CylinderGeometry(0.009, 0.014, h, 3, 1, true), color: '#7cc08b', to: '#9ad7a0', m: xf([0, h / 2, 0]) };
 }
 function leaf(y, a) {
-  return { geo: new THREE.IcosahedronGeometry(0.06, 1), color: '#8fd19b', m: xf([Math.cos(a) * 0.05, y, Math.sin(a) * 0.05], [0, -a, 0.5], [1.1, 0.16, 0.5]) };
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0.07, 0.03, 0.03, 0.15, 0.05, 0, 0.07, 0.03, -0.03], 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+  g.setIndex([0, 1, 2, 0, 2, 3]);
+  return { geo: g, color: '#8fd19b', m: xf([0, y, 0], [0, a, 0.25]) };
 }
+const heart = (y, r = 0.034) => ({ geo: new THREE.OctahedronGeometry(r, 0), color: '#ffd776', m: xf([0, y, 0], [0, 0, 0], [1, 0.6, 1]) });
 
 function blossomGeo() {
-  const h = 0.36, parts = [stem(h), leaf(0.12, 0.6), leaf(0.2, 3.4)];
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    parts.push({
-      geo: new THREE.IcosahedronGeometry(0.06, 1), color: '#ffffff', to: '#f2e9ee', tint: 1,
-      m: xf([Math.cos(a) * 0.07, h + 0.01, Math.sin(a) * 0.07], [0, -a, 0.22], [1.15, 0.26, 0.72]),
-    });
-  }
-  parts.push({ geo: new THREE.IcosahedronGeometry(0.036, 1), color: '#ffd776', m: xf([0, h + 0.025, 0], [0, 0, 0], [1, 0.6, 1]) });
-  return plant(parts);
-}
-
-function tulipGeo() {
-  const h = 0.4, parts = [stem(h), leaf(0.1, 2.1), leaf(0.16, 5.2)];
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2;
-    parts.push({
-      geo: new THREE.IcosahedronGeometry(0.07, 1), color: '#ffffff', to: '#fff', tint: 1,
-      m: xf([Math.cos(a) * 0.035, h + 0.06, Math.sin(a) * 0.035], [0, -a, -0.16], [0.5, 1.2, 0.72]),
-    });
-  }
-  return plant(parts);
+  const h = 0.36;
+  return plant([
+    stem(h), leaf(0.12, 0.6), leaf(0.2, 3.4),
+    { geo: bloom(6, 0.15, 0.05), color: '#f2e6ec', to: '#ffffff', tint: 1, m: xf([0, h, 0]) },
+    heart(h + 0.04),
+  ]);
 }
 
 function peonyGeo() {
-  const h = 0.32, parts = [stem(h), leaf(0.14, 1)];
-  const r = rng(9);
-  for (let ring = 0; ring < 3; ring++) {
-    const n = 7 - ring * 2, rad = 0.1 - ring * 0.035;
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + ring;
-      parts.push({
-        geo: new THREE.IcosahedronGeometry(0.07 - ring * 0.012, 1), color: ring ? '#ffffff' : '#fff2f4', tint: 1,
-        m: xf([Math.cos(a) * rad, h + 0.03 + ring * 0.03, Math.sin(a) * rad], [r() * 0.3, -a, 0.5 + ring * 0.25], [1, 0.45, 0.82]),
-      });
-    }
-  }
-  return plant(parts);
+  const h = 0.32;
+  return plant([
+    stem(h), leaf(0.14, 1),
+    { geo: bloom(7, 0.17, 0.09, 0.4), color: '#eedfe6', to: '#ffffff', tint: 1, m: xf([0, h, 0]) },
+    { geo: bloom(5, 0.1, 0.05, 0.4), color: '#ffffff', tint: 1, m: xf([0, h + 0.05, 0], [0, 0.6, 0]) },
+    heart(h + 0.09, 0.026),
+  ]);
+}
+
+function tulipGeo() {
+  const h = 0.4;
+  const pts = [[0.001, 0], [0.05, 0.015], [0.07, 0.08], [0.052, 0.15]].map(([x, y]) => new THREE.Vector2(x, y));
+  return plant([
+    stem(h), leaf(0.1, 2.1), leaf(0.16, 5.2),
+    { geo: new THREE.LatheGeometry(pts, 6), color: '#e9dfe6', to: '#ffffff', tint: 1, m: xf([0, h, 0]) },
+  ]);
 }
 
 function lavenderGeo() {
-  const h = 0.42, parts = [stem(h)];
-  for (let i = 0; i < 9; i++) {
-    const a = i * 2.3, y = h - 0.08 + i * 0.022;
-    parts.push({ geo: new THREE.IcosahedronGeometry(0.024 - i * 0.0012, 0), color: '#ffffff', tint: 1, m: xf([Math.cos(a) * 0.024, y, Math.sin(a) * 0.024]) });
-  }
-  return plant(parts);
+  const h = 0.34;
+  return plant([stem(h), { geo: new THREE.ConeGeometry(0.03, 0.16, 4, 1, true), color: '#ffffff', tint: 1, m: xf([0, h + 0.06, 0]) }]);
 }
 
-function canopyGeo(seed) {
+function canopyGeo(seed, cell) {
   const r = rng(seed), blobs = [];
   for (let i = 0; i < 9; i++) {
     const a = r() * 6.28, rad = 0.45 + r() * 0.55, y = 0.1 + r() * 0.75;
@@ -256,7 +277,7 @@ function canopyGeo(seed) {
   };
   const dark = new THREE.Color('#c9b4c0'), light = new THREE.Color('#ffffff');
   const color = (x, y, z, c) => c.copy(dark).lerp(light, sstep(-0.3, 0.95, y + (fbm(x * 4, y * 4, z * 4) - 0.5) * 0.5));
-  const g = sdfGeometry({ sdf, color, min: [-1.5, -0.6, -1.5], max: [1.5, 1.7, 1.5], cell: 0.085 });
+  const g = sdfGeometry({ sdf, color, min: [-1.5, -0.6, -1.5], max: [1.5, 1.7, 1.5], cell });
   const c = g.attributes.position.count;
   g.setAttribute('aTint', new THREE.BufferAttribute(new Float32Array(c).fill(1), 1));
   const sway = new Float32Array(c);
@@ -270,7 +291,9 @@ const UP = new THREE.Vector3(0, 1, 0);
 export function createFlora(terrain, stops, blocked, q) {
   const group = new THREE.Group();
   const r = rng(77);
-  const mat = windMaterial({ side: THREE.DoubleSide });
+  const near = new THREE.Group();   // the small stuff, only drawn close to the surface
+  group.add(near);
+  const mat = windMaterial({ side: THREE.DoubleSide }, true);
   const m = new THREE.Matrix4(), quat = new THREE.Quaternion(), spin = new THREE.Quaternion();
   const pos = new THREE.Vector3(), scl = new THREE.Vector3(), d = new THREE.Vector3(), col = new THREE.Color();
 
@@ -281,7 +304,7 @@ export function createFlora(terrain, stops, blocked, q) {
       const bias = Math.pow(r(), 1.5);
       const z = (minZ + bias * (maxZ - minZ)) * (r() < 0.62 ? -1 : 1);
       d.copy(dirAt(phi, z));
-      if (!blocked(d, k)) return d;
+      if (!blocked(d, k) && terrain.height(d) > -0.05) return d;
     }
     return null;
   };
@@ -290,7 +313,7 @@ export function createFlora(terrain, stops, blocked, q) {
     for (let tries = 0; tries < 40; tries++) {
       const u = r() * 2 - 1, a = r() * 6.283, q2 = Math.sqrt(1 - u * u);
       d.set(q2 * Math.cos(a), q2 * Math.sin(a), u);
-      if (Math.abs(d.z) * R > minZ) return d;
+      if (Math.abs(d.z) * R > minZ && terrain.height(d) > -0.05) return d;
     }
     return null;
   };
@@ -319,7 +342,8 @@ export function createFlora(terrain, stops, blocked, q) {
     }
     im.instanceMatrix.needsUpdate = true;
     im.instanceColor.needsUpdate = true;
-    group.add(im);
+    near.add(im);
+    im.userData.full = count;
     return im;
   };
 
@@ -332,18 +356,37 @@ export function createFlora(terrain, stops, blocked, q) {
     c.set(f[(r() * f.length) | 0]);
   };
 
-  scatter(tuftGeo(), q ? 16000 : 7000, { minZ: 0.82, s0: 0.55, s1: 1.15, colorFn: grassC, k: 0.62 });
-  const tuft2 = tuftGeo(), bl2 = blossomGeo(), pe2 = peonyGeo();
-  scatter(tuft2, q ? 7000 : 2500, { minZ: 5.5, s0: 1.4, s1: 2.4, colorFn: grassC, far: true });
-  scatter(bl2, q ? 3000 : 1200, { minZ: 5.5, s0: 1.3, s1: 2.1, colorFn: flowerC, far: true });
-  scatter(pe2, q ? 1400 : 600, { minZ: 5.5, s0: 1.3, s1: 2.2, colorFn: flowerC, far: true });
-  scatter(blossomGeo(), q ? 5200 : 2200, { minZ: 0.95, maxZ: 7, s0: 0.5, s1: 0.95, colorFn: flowerC, cast: !!q, front: 2.2, k: 0.85 });
-  scatter(tulipGeo(), q ? 1800 : 800, { minZ: 1.0, maxZ: 6, s0: 0.5, s1: 0.85, colorFn: flowerC, cast: !!q, front: 2.6 });
-  scatter(peonyGeo(), q ? 1500 : 700, { minZ: 1.0, maxZ: 6, s0: 0.5, s1: 0.95, colorFn: flowerC, cast: !!q, front: 2.6 });
-  scatter(lavenderGeo(), q ? 1800 : 800, { minZ: 1.1, maxZ: 7, s0: 0.6, s1: 1.1, colorFn: flowerC, front: 2.2 });
+  // Close-up plants stay near the path, where the camera can actually see them.
+  scatter(tuftGeo(), q ? 4400 : 2800, { minZ: 0.82, maxZ: 4, s0: 0.5, s1: 0.95, colorFn: grassC, k: 0.62 });
+  scatter(blossomGeo(), q ? 1300 : 800, { minZ: 0.95, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.3, k: 0.85 });
+  scatter(peonyGeo(), q ? 460 : 300, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.5 });
+  scatter(tulipGeo(), q ? 400 : 260, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 0.9, colorFn: flowerC, front: 1.5 });
+  scatter(lavenderGeo(), q ? 420 : 260, { minZ: 1.1, maxZ: 4, s0: 0.7, s1: 1.15, colorFn: flowerC, front: 1.5 });
+
+  // Flower patches carry the far side of the planet: small clusters of soft domes,
+  // big enough to read as shapes from orbit, so they never shimmer.
+  const pb = new Bag();
+  for (let i = 0; i < 6; i++) {
+    const a = i * 1.05 + r(), rad = i ? 0.3 + r() * 0.26 : 0;
+    pb.add(new THREE.IcosahedronGeometry(0.24 + r() * 0.14, 1), i % 2 ? '#e6dbe2' : '#f4edf1', xf([Math.cos(a) * rad, 0, Math.sin(a) * rad], [0, 0, 0], [1, 0.6, 1]), '#ffffff');
+  }
+  const moundGeo = pb.build().geometry;
+  const mounds = new THREE.InstancedMesh(moundGeo, vertexSoft({ roughness: 0.9 }), q ? 130 : 90);
+  mounds.frustumCulled = false;
+  mounds.receiveShadow = true;
+  for (let i = 0; i < mounds.count; i++) {
+    const pt = sampleFar(3.4);
+    pos.copy(pt).multiplyScalar(R + terrain.height(pt) + 0.02);
+    quat.setFromUnitVectors(UP, pt);
+    m.compose(pos, quat, scl.setScalar(0.6 + r() * 0.9));
+    mounds.setMatrixAt(i, m);
+    flowerC(pt, col);
+    mounds.setColorAt(i, col);
+  }
+  group.add(mounds);
 
   // Trees
-  const canopies = [canopyGeo(3), canopyGeo(11)];
+  const canopies = [canopyGeo(3, q ? 0.12 : 0.15), canopyGeo(11, q ? 0.12 : 0.15)];
   const treeC = (dd, c) => {
     const z = terrain.nearestZone(dd).zone;
     const pal = {
@@ -358,7 +401,7 @@ export function createFlora(terrain, stops, blocked, q) {
   trunkBag.add(new THREE.CylinderGeometry(0.035, 0.08, 0.8, 7), '#b98f7f', xf([0.26, 1.1, 0.04], [0, 0, -0.7]));
   trunkBag.add(new THREE.CylinderGeometry(0.035, 0.08, 0.8, 7), '#b98f7f', xf([-0.22, 1.2, -0.06], [0, 0, 0.6]));
   const trunkGeo = trunkBag.build().geometry;
-  const count = q ? 110 : 70;
+  const count = q ? 60 : 40;
   for (let i = 0; i < count; i++) {
     const near = i % 2 === 0;
     const pt = i % 3 === 2 ? sampleFar(7) : sample(near ? 3.0 : 4.6, near ? 5.2 : 8);
@@ -398,7 +441,7 @@ export function createFlora(terrain, stops, blocked, q) {
   group.add(trunks);
 
   // Stepping stones along the path
-  const stoneGeo = new THREE.IcosahedronGeometry(0.2, 2);
+  const stoneGeo = new THREE.IcosahedronGeometry(0.2, 1);
   stoneGeo.scale(1, 0.14, 0.72);
   const stones = new THREE.InstancedMesh(paint(stoneGeo, '#ffffff'), vertexSoft({ roughness: 0.65 }), 120);
   stones.receiveShadow = true;
@@ -416,5 +459,45 @@ export function createFlora(terrain, stops, blocked, q) {
     stones.setColorAt(i, col.set(['#fde7ee', '#ece6fb', '#fff4d9', '#dff5ea'][i % 4]));
   }
   group.add(stones);
-  return group;
+  return { group, near };
+}
+
+// One sphere under the land. Wherever the ground dips below it, there is a lake.
+export function createWater() {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: shared.uTime,
+      uDeep: { value: new THREE.Color('#9ed6dc') },
+      uShallow: { value: new THREE.Color('#d0f0ec') },
+      uSky: { value: new THREE.Color('#ffffff') },
+      uLight: { value: 1 },
+    },
+    vertexShader: `
+      varying vec3 vP; varying vec3 vN; varying vec3 vV;
+      void main(){
+        vP = position;
+        vec4 mv = modelViewMatrix * vec4(position, 1.);
+        vN = normalMatrix * normal;
+        vV = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying vec3 vP; varying vec3 vN; varying vec3 vV;
+      uniform float uTime, uLight; uniform vec3 uDeep, uShallow, uSky;
+      void main(){
+        vec3 p = vP * 1.5;
+        float t = uTime;
+        float w = sin(p.x * 3. + t * .9 + sin(p.y * 2.1 + t * .4))
+                + sin(p.y * 3.7 - t * .7 + sin(p.z * 2.7))
+                + sin(p.z * 4.3 + t * .6 + p.x);
+        w /= 3.;
+        float f = pow(1. - max(dot(normalize(vV), normalize(vN)), 0.), 2.4);
+        vec3 c = mix(uDeep, uShallow, .5 + .5 * w);
+        c = mix(c, uSky, f * .65);
+        c += smoothstep(.62, .95, w) * .1;
+        gl_FragColor = vec4(c * uLight, 1.);
+        #include <colorspace_fragment>
+      }`,
+  });
+  return new THREE.Mesh(new THREE.SphereGeometry(R - 0.14, 72, 48), mat);
 }
