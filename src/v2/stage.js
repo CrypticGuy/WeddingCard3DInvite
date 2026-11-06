@@ -59,16 +59,18 @@ export class Stage {
     const subjectImg = img('main', subject);
     const sprites = [];
     for (const q of def.sprites) {
-      const pos = `left:${q.x * 100}%;top:${q.y * 100}%;width:${q.w * 100}%;`;
+      // Margins centre each piece; percentages work because every subject is square.
+      const pos = `left:${q.x * 100}%;top:${q.y * 100}%;width:${q.w * 100}%;margin-left:${-q.w * 50}%;`;
       if (q.glow) {
         const n = el('i', 'glow', subject);
-        n.style.cssText = `${pos}aspect-ratio:1;${q.style ?? ''}`;
+        n.style.cssText = `${pos}height:${q.w * 100}%;margin-top:${-q.w * 50}%;${q.style ?? ''}`;
         continue;
       }
       const n = img(`sprite ${q.cls}`);
       if (q.back) subject.prepend(n); else subject.append(n);
       n.dataset.src = small + q.src;
-      n.style.cssText = `${pos}height:${(q.w / q.ar) * 100}%;${q.style ?? ''}`;
+      const tall = (q.w / q.ar) * 100;
+      n.style.cssText = `${pos}height:${tall}%;${q.cls === 'sway' ? '' : `margin-top:${-tall}%;`}${q.style ?? ''}`;
       n.spec = q;
       sprites.push(n);
     }

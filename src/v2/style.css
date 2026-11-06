@@ -43,7 +43,7 @@ html.painted #stage, html.no-gl #stage { visibility: visible; }
 .subject { position: absolute; left: 0; top: 0; }
 .subject .main { width: 100%; height: 100%; }
 .fg { position: absolute; left: 0; width: 1px; }
-.fg .flip { scale: -1 1; }
+.fg .flip { transform: scaleX(-1); }
 .clouds { position: absolute; inset: 0; }
 .cloud {
   width: 50vmax; height: auto; opacity: .62; will-change: transform;
@@ -52,15 +52,15 @@ html.painted #stage, html.no-gl #stage { visibility: visible; }
 @keyframes drift { from { transform: translate3d(-18vw, 0, 0); } to { transform: translate3d(22vw, 1.5vh, 0); } }
 
 /* Small living details. All of it runs on the compositor. */
-.sprite { position: absolute; translate: -50% -100%; transform-origin: 50% 100%; }
+.sprite { position: absolute; transform-origin: 50% 100%; }
 .flame { animation: flick 1.7s ease-in-out infinite alternate; opacity: .95; }
-.flame.b { animation: flick2 1.15s ease-in-out infinite alternate; scale: -1 1; opacity: .8; }
+.flame.b { animation: flick2 1.15s ease-in-out infinite alternate; opacity: .8; }
 @keyframes flick { 0% { transform: scale(1, 1) skewX(-2deg); } 35% { transform: scale(.94, 1.1) skewX(3deg); } 70% { transform: scale(1.04, .95) skewX(-3deg); } 100% { transform: scale(.97, 1.06) skewX(2deg); } }
-@keyframes flick2 { 0% { transform: scale(.9, 1.04) skewX(3deg); opacity: .55; } 50% { transform: scale(1, .9) skewX(-4deg); opacity: .9; } 100% { transform: scale(.92, 1.12) skewX(2deg); opacity: .6; } }
-.sprite.sway { transform-origin: 50% 0; translate: -50% 0; animation: sway var(--dur, 5.5s) ease-in-out var(--delay, 0s) infinite alternate; }
+@keyframes flick2 { 0% { transform: scale(-.9, 1.04) skewX(3deg); opacity: .55; } 50% { transform: scale(-1, .9) skewX(-4deg); opacity: .9; } 100% { transform: scale(-.92, 1.12) skewX(2deg); opacity: .6; } }
+.sprite.sway { transform-origin: 50% 0; animation: sway var(--dur, 5.5s) ease-in-out var(--delay, 0s) infinite alternate; }
 @keyframes sway { from { transform: rotate(var(--a, -2.4deg)); } to { transform: rotate(calc(var(--a, -2.4deg) * -1)); } }
 .glow {
-  position: absolute; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  position: absolute; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255, 214, 140, .5), rgba(255, 200, 130, .2) 55%, transparent);
   animation: pulse var(--dur, 3.4s) ease-in-out var(--delay, 0s) infinite alternate;
 }
@@ -150,11 +150,11 @@ html.locked #story { visibility: hidden; }
 html.locked #story .hero.on { visibility: visible; }
 .chapter { position: relative; pointer-events: none; }
 .chapter a, .chapter button, .card { pointer-events: auto; }
-.hero, .finale { height: 100svh; overflow: hidden; }
-.gap.dive { height: 170svh; }
-.gap.outro { height: 190svh; }
-.event { height: 300svh; }
-.pin { position: sticky; top: 0; height: 100svh; display: flex; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
+.hero, .finale { height: 100vh; height: 100svh; overflow: hidden; }
+.gap.dive { height: 170vh; height: 170svh; }
+.gap.outro { height: 190vh; height: 190svh; }
+.event { height: 300vh; height: 300svh; }
+.pin { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); }
 
 .eyebrow { font-size: 12.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
 
@@ -205,7 +205,7 @@ h1 {
 .tag { font-family: var(--display); font-style: italic; color: var(--ink-soft); font-size: 16.5px; text-wrap: balance; font-variation-settings: 'SOFT' 100, 'opsz' 20; }
 .when {
   display: flex; gap: 12px; align-items: center; margin-top: 2px; padding: 6px 0;
-  border-block: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold);
 }
 .when b { font-family: var(--display); font-weight: 300; font-size: 40px; line-height: 1; color: var(--ink); font-variation-settings: 'SOFT' 100, 'opsz' 144; }
 .when span { display: grid; text-align: left; line-height: 1.2; font-size: 15px; }
