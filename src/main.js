@@ -28,10 +28,60 @@ document.title = `${invite.couple.first} & ${invite.couple.second}`;
 
 const chapters = [...document.querySelectorAll('.chapter')];
 
-function chapterTop(i) { return chapters[clamp(i, 0, chapters.length - 1)].offsetTop; }
+// Each chapter pins inside a taller stop: the scene holds while you scroll, then moves on.
+const stops = chapters.map((c) => {
+  const stop = document.createElement('div');
+  stop.className = 'stop';
+  c.before(stop);
+  stop.append(c);
+  return stop;
+});
+
+function chapterTop(i) { return stops[clamp(i, 0, stops.length - 1)].offsetTop; }
+
+function scrollPlace() {
+  const h = stops[0].offsetHeight || innerHeight;
+  const hold = 1 - chapters[0].offsetHeight / h;   // share of a stop spent pinned
+  const raw = window.scrollY / h, i = Math.floor(raw);
+  return { h, hold, i, f: raw - i };
+}
+
 function scrollChapter() {
-  const h = chapters[0].offsetHeight || innerHeight;
-  return window.scrollY / h;
+  const { hold, i, f } = scrollPlace();
+  return i + Math.max(0, (f - hold) / (1 - hold));
+}
+
+// Never rest between two events: finish the move once scrolling stops.
+let touching = false, settleTimer = 0;
+function settle() {
+  if (touching || reduced || html.classList.contains('locked')) return;
+  const { h, hold, i, f } = scrollPlace();
+  if (i >= stops.length - 1 || f <= hold + 0.01) return;
+  const forward = (f - hold) / (1 - hold) > 0.5;
+  window.scrollTo({ top: forward ? (i + 1) * h : (i + hold) * h, behavior: 'smooth' });
+}
+addEventListener('touchstart', () => { touching = true; }, { passive: true });
+addEventListener('touchend', () => { touching = false; clearTimeout(settleTimer); settleTimer = setTimeout(settle, 220); }, { passive: true });
+addEventListener('scroll', () => { clearTimeout(settleTimer); settleTimer = setTimeout(settle, 220); }, { passive: true });
+
+// Tells the camera how much of the screen each chapter's text leaves free. Offsets are
+// used on purpose: unlike rectangles they ignore the cards' entrance animation.
+function box(el) {
+  return { l: el.offsetLeft, t: el.offsetTop, r: el.offsetLeft + el.offsetWidth, b: el.offsetTop + el.offsetHeight };
+}
+function measureFrames(world) {
+  const first = chapters[0], W = first.offsetWidth, H = first.offsetHeight;
+  const around = (el) => {
+    const c = box(el);
+    return c.l < W * 0.25 ? { x: 0, y: 0, w: W, h: c.t } : { x: 0, y: 0, w: c.l, h: H };
+  };
+  const text = box($('.hero-in')), cue = box($('.cue'));
+  const beside = text.r < W * 0.62;
+  world.layout = {
+    event: around($('.event .card')),
+    finale: around($('.finale-in')),
+    hero: beside ? { x: text.r, y: 0, w: W - text.r, h: H } : W < H ? { x: 0, y: text.b, w: W, h: cue.t - text.b } : null,
+  };
 }
 function goTo(i) {
   window.scrollTo({ top: chapterTop(i), behavior: reduced ? 'auto' : 'smooth' });
@@ -129,7 +179,8 @@ async function boot() {
   world.cardArt = art;
   await world.build(onStep);
 
-  addEventListener('resize', () => world.resize());
+  measureFrames(world);
+  addEventListener('resize', () => { world.resize(); measureFrames(world); });
   if (params.has('perf')) import('./perf/monitor.js').then((m) => m.startMonitor(world));
   addEventListener('pointermove', (e) => {
     if (e.pointerType === 'touch') return;

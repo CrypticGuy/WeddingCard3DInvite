@@ -295,6 +295,12 @@ export class World {
     this.camera.updateProjectionMatrix();
   }
 
+  // Camera distance and offset that fit a subject of this size into a free screen area.
+  fitTo(f, size) {
+    const T = 2 * Math.tan((15 * Math.PI) / 180), H = this.h;
+    return { dist: (size * H) / (Math.min(f.w, f.h) * T), sx: 0.5 - (f.x + f.w / 2) / this.w, sy: 0.5 - (f.y + f.h / 2) / H };
+  }
+
   // Camera pose for a chapter, adjusted for the screen shape.
   pose(name) {
     const a = this.aspect, portrait = a < 0.9;
@@ -307,13 +313,23 @@ export class World {
     }
     if (name === 'hero' || name === 'finale') {
       const hero = name === 'hero';
-      const dist = (hero ? 52 : 58) * clamp(0.98 / a, 1, 1.7);
       const az = hero ? 0.82 : 0.95, el = hero ? 0.16 : 0.3;
+      const free = hero ? this.layout?.hero : this.layout?.finale;
+      if (free) {
+        const { dist, sx, sy } = this.fitTo(free, 26);
+        return { pos: [Math.sin(az) * dist, Math.sin(el) * dist, Math.cos(az) * dist], tgt: [0, 0, 0], sx, sy, wide: 1, blur: 0 };
+      }
+      const dist = (hero ? 52 : 58) * clamp(0.98 / a, 1, 1.7);
       return {
         pos: [Math.sin(az) * dist, Math.sin(el) * dist, Math.cos(az) * dist], tgt: [0, 0, 0],
         sx: 0, sy: portrait ? (hero ? -0.14 : 0.24) : (hero ? -0.3 : 0),
         sxWide: !portrait && !hero ? -0.2 : 0, wide: 1, blur: 0,
       };
+    }
+    if (this.layout?.event) {
+      const { dist, sx, sy } = this.fitTo(this.layout.event, 5.6);
+      const tgt = [0, R + 2, -1.3];
+      return { pos: [tgt[0] + 0.07 * dist, tgt[1] + 0.13 * dist, tgt[2] + dist], tgt, sx, sy, wide: 0, blur: this.high ? 3.4 : 0 };
     }
     const dist = 9.3 * fit;
     const tgt = [0, R + 1.5, -1.3];

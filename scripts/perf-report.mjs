@@ -54,7 +54,7 @@ async function runProfile(p, url) {
   let chapter = 0, hostRam = null, hostGpu = null;
   for (let i = 0; (Date.now() - t0) / 1000 < seconds; i++) {
     if (i % 3 === 0) {
-      await page.evaluate((c) => scrollTo({ top: document.querySelectorAll('.chapter')[c].offsetTop, behavior: 'smooth' }), chapter);
+      await page.evaluate((c) => { const el = document.querySelectorAll('.chapter')[c]; scrollTo({ top: (el.closest('.stop') ?? el).offsetTop, behavior: 'smooth' }); }, chapter);
       chapter = (chapter + 1) % count;
     }
     if (i % 5 === 0) {

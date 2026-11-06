@@ -22,7 +22,6 @@ html[data-chapter='wedding'] { --accent: #dc6585; --tint: #ffe3e6; --gold: #d3a5
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html {
-  scroll-snap-type: y mandatory;
   background: #fbdbe2;
   -webkit-text-size-adjust: 100%;
 }
@@ -90,10 +89,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 /* Chapters */
 #story { position: relative; z-index: 5; }
+/* A stop is taller than the screen, so each chapter holds before the world moves on. */
+.stop { height: 185svh; }
+.stop:last-child { height: 100svh; }
 html.locked #story { visibility: hidden; }
 html.locked #story .hero.on { visibility: visible; }
 .chapter {
-  position: relative; height: 100svh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden;
+  position: sticky; top: 0; height: 100svh; overflow: hidden;
   padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
   pointer-events: none;
 }
@@ -261,14 +263,88 @@ dd { min-width: 0; }
   #dots button::before { width: 6px; height: 6px; }
 }
 
+/* Tablets in portrait: the card grows with the screen instead of sitting tiny at the foot. */
+@media (min-width: 600px) and (max-aspect-ratio: 9/10) {
+  .card { width: min(600px, 76vw); }
+  .card-in { padding: 52px 40px 28px; gap: 10px; border-radius: 170px 170px 26px 26px / 84px 84px 26px 26px; }
+  .card-in::before { inset: 10px; border-radius: 160px 160px 18px 18px / 76px 76px 18px 18px; }
+  .card h2 { font-size: 66px; }
+  .tag { font-size: 20px; }
+  .day { font-size: 54px; }
+  .mon b { font-size: 20px; }
+  .mon i { font-size: 17px; }
+  dl { font-size: 20px; gap: 7px; }
+  dl div { grid-template-columns: 84px 1fr; }
+  dt { font-size: 15px; }
+  .btn { font-size: 19px; padding: 13px 28px; }
+  .eyebrow { font-size: 16px; }
+  .spray { width: 36%; top: -56px; right: -20px; }
+  .finale-in { width: min(600px, 76vw); padding: 52px 40px 26px; gap: 12px; }
+  .finale h2 { font-size: 70px; }
+  .count b { font-size: 52px; }
+  .mini button { font-size: 19px; }
+  .mini .t { font-size: 26px; }
+  .note { font-size: 20px; }
+  h1 { font-size: clamp(70px, 12vw, 120px); }
+  .span { font-size: 28px; }
+  .line { font-size: 20px; }
+}
+
+/* Very short portrait screens: drop what the event cards already say. */
+@media (max-height: 600px) and (max-aspect-ratio: 9/10) {
+  .finale .note, .finale .eyebrow { display: none; }
+  .finale-in { gap: 5px; padding-top: 22px; }
+  .finale h2 { font-size: 38px; }
+  .mini button { padding: 2px; }
+  .card-in { padding-top: 24px; }
+}
+
+/* Phones on their side: compact cards beside the scene, so nothing runs off the screen. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .event { align-items: center; justify-content: flex-end; padding: 0 44px 0 12px; }
+  .card { width: min(330px, 44vw); }
+  .card-in { padding: 13px 18px 12px; gap: 2px; border-radius: 18px; }
+  .card-in::before { inset: 5px; border-radius: 13px; }
+  .card .eyebrow { font-size: 11px; }
+  .card h2 { font-size: 30px; }
+  .tag { display: none; }
+  .when { margin-top: 2px; padding: 1px 14px 3px 11px; gap: 8px; }
+  .day { font-size: 25px; }
+  .mon b { font-size: 13px; }
+  .mon i { font-size: 11px; }
+  dl { font-size: 13px; gap: 0; margin-top: 3px; }
+  dl div { grid-template-columns: 46px 1fr; }
+  dt { font-size: 10px; }
+  .actions { margin-top: 3px; }
+  .btn { font-size: 13px; padding: 6px 15px; }
+  .spray { width: 28%; top: -10px; right: -8px; }
+  .hero { align-items: flex-start; text-align: left; }
+  .hero-in { width: min(50vw, 420px); padding-top: 16px; justify-items: start; gap: 2px; }
+  h1 { font-size: clamp(34px, 15svh, 56px); justify-content: flex-start; }
+  .span { font-size: 17px; }
+  .line { font-size: 13px; }
+  .cue { left: 16px; translate: 0 0; bottom: 8px; justify-items: start; color: var(--ink); text-shadow: none; }
+  .cue i { display: none; }
+  .finale { align-items: center; padding-left: 16px; }
+  .finale-in { width: min(370px, 48vw); padding: 12px 18px 10px; gap: 5px; border-radius: 18px; }
+  .finale-in::before { inset: 5px; border-radius: 13px; }
+  .finale h2 { font-size: 32px; }
+  .finale .eyebrow, .mini, .note { display: none; }
+  .count b { font-size: 26px; }
+  .count span { font-size: 10px; }
+  .finale .actions { margin-top: 0; }
+  .credit { font-size: 10px; }
+  #dots button { height: 20px; }
+}
+
 /* No WebGL: the same invitation as a plain pastel scroll. */
-html.no-gl { background: linear-gradient(#fbdbe2, #e4f3e0 30%, #fff1cb 55%, #e7ddfb 78%, #fbdbe2); scroll-snap-type: none; }
+html.no-gl { background: linear-gradient(#fbdbe2, #e4f3e0 30%, #fff1cb 55%, #e7ddfb 78%, #fbdbe2); }
+html.no-gl .stop { height: auto; }
 html.no-gl #gl { display: none; }
 html.no-gl .event { justify-content: center; padding-right: 16px; }
-html.no-gl .chapter { height: auto; min-height: 100svh; }
+html.no-gl .chapter { position: relative; height: auto; min-height: 100svh; }
 html.no-gl .cue { color: var(--ink); text-shadow: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-snap-type: y proximity; }
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
 }
