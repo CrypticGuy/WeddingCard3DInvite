@@ -261,6 +261,8 @@ html.globe #spin { display: block; }
 }
 html.spun #spin p { opacity: 0; }
 
+html[data-mode='dive'] #next { display: none; }
+
 /* Chrome */
 #chrome { position: fixed; z-index: 10; right: max(10px, env(safe-area-inset-right)); top: 50%; translate: 0 -50%; opacity: 0; transition: opacity .8s; pointer-events: none; }
 #chrome.in { opacity: 1; pointer-events: auto; }

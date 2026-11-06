@@ -10,6 +10,8 @@ The site root is a review page listing every version. Each version is a folder: 
 
 `v2/` is the watercolour storybook: V1's opening and finale around four painted scenes. Its code is in `src/v2/` and its art in `public/v2/art/`. `v3/` is the same storybook without the dog (`data-variant="nodog"`) and shares V2's code and art. How the art was made is in [`public/v2/art/CREDITS.md`](public/v2/art/CREDITS.md); to remake it, see the scripts in `scripts/v2-art/` (Python with Pillow, numpy, scipy and opencv-python-headless).
 
+Every version shows a "Next" arrow and a save button. The saved image and PDF are drawn in the browser by [`src/ui/poster.js`](src/ui/poster.js) from the same config, so they always match the site.
+
 ## Edit the invite
 
 All wording, dates and venues live in [`src/config.js`](src/config.js). Dates shown there are placeholders until replaced.

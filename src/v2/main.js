@@ -8,6 +8,7 @@ import { invite } from '../config.js';
 import { startCountdown, icsFile, dateOf, part } from '../ui/story.js';
 import { Music } from '../audio.js';
 import { clamp, damp, sstep } from '../world/kit.js';
+import { mountExtras } from '../ui/extras.js';
 import { renderStory } from './story.js';
 import { Stage, REST } from './stage.js';
 import { PaintedDog } from './dog.js';
@@ -33,6 +34,7 @@ startCountdown(story);
 document.title = `${invite.couple.first} & ${invite.couple.second}`;
 
 const events = invite.events;
+const extras = mountExtras({ withDog });
 const eventEls = [...document.querySelectorAll('.event')];
 const heroEl = $('.hero'), finaleEl = $('.finale'), outroEl = $('.gap.outro');
 const stage = new Stage($('#stage'), events, { lite: tier === 'lite', reduced, fewer: mobile });
@@ -80,6 +82,10 @@ let activeChapter = -1;
 function setChapter(i, theme) {
   if (i === activeChapter) return;
   activeChapter = i;
+  // The hero has its own cue. After it, the arrow always names what is coming.
+  const coming = i + 1;
+  if (i === 0 || coming > events.length + 1) extras.setNext(null);
+  else extras.setNext(coming, coming > events.length ? invite.closingTitle : `Next: ${events[coming - 1].title}`);
   document.querySelectorAll('#dots button').forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
   html.dataset.chapter = theme;
 }
