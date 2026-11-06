@@ -382,8 +382,8 @@ export class World {
     shared.uGrow.value = 1 - sstep(0.25, 0.7, wide);
     this.nearFlora.visible = shared.uGrow.value > 0.01;
     if (!this.high) this.petals.visible = wide < 0.5;
-    this.scene.fog.near = lerp(15, 90, wide);
-    this.scene.fog.far = lerp(58, 260, wide);
+    this.scene.fog.near = lerp(15, 420, wide);
+    this.scene.fog.far = lerp(58, 1000, wide);
     this.petals.material.uniforms.uCenter.value.lerpVectors(tgt, this.camera.position, 0.35);
     this.petals.material.uniforms.uBox.value = lerp(15, 46, wide);
     this.petals.material.uniforms.uSize.value = lerp(0.08, 0.16, wide);

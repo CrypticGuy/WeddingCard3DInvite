@@ -18,7 +18,7 @@ html[data-chapter='wedding'] { --accent: #a4596a; --gold: #b48d4e; }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { background: #f6ece0; -webkit-text-size-adjust: 100%; }
+html { background: #f6ece0; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
 html.locked { overflow: hidden; }
 html.locked body { overflow: hidden; height: 100svh; }
 body {
@@ -37,7 +37,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 html.painted #stage, html.no-gl #stage { visibility: visible; }
 .scene { position: absolute; inset: 0; display: none; overflow: hidden; }
-.scene.on { display: block; }
+.scene.on { display: block; z-index: 1; }
+/* The next painting is laid out and rasterised behind the current one before the swap. */
+.scene.warm { display: block; }
+.scene.warm .clouds, .scene.warm .petals { display: none; }
 .scene img { position: absolute; left: 0; top: 0; max-width: none; user-select: none; }
 .scene .sky, .scene .hills, .scene .subject, .scene .fg { will-change: transform; }
 .subject { position: absolute; left: 0; top: 0; }
@@ -142,10 +145,10 @@ html[data-variant='nodog'] #dog { display: none; }
   position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; translate: -50% 0;
   pointer-events: auto; font-size: 13px; letter-spacing: .08em; color: #7d5a64; padding: 8px 12px; opacity: .8;
 }
-#intro.gone #skip { display: none; }
+#intro.gone #skip, html[data-variant='nodog'] #intro.started #skip { display: none; }
 
 /* Scroll track */
-#story { position: relative; z-index: 5; }
+#story { position: relative; z-index: 5; overflow-x: clip; pointer-events: none; }
 html.locked #story { visibility: hidden; }
 html.locked #story .hero.on { visibility: visible; }
 .chapter { position: relative; pointer-events: none; }
@@ -248,6 +251,18 @@ dd { min-width: 0; }
 .credit { font-size: 11.5px; line-height: 1.35; color: var(--ink-soft); }
 .credit a { color: inherit; }
 
+/* The finale globe: a layer under the paper card that takes drags. */
+#spin { position: fixed; inset: 0; z-index: 4; display: none; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#spin:active { cursor: grabbing; }
+html.globe #spin { display: block; }
+#spin p {
+  position: absolute; left: 62%; bottom: 5%; translate: -50% 0; white-space: nowrap; font-family: var(--display); font-style: italic;
+  font-size: 15.5px; color: #5f4a55; transition: opacity .6s; pointer-events: none; font-variation-settings: 'SOFT' 100, 'opsz' 20;
+}
+html.spun #spin p { opacity: 0; }
+
+html[data-mode='dive'] #next { display: none; }
+
 /* Chrome */
 #chrome { position: fixed; z-index: 10; right: max(10px, env(safe-area-inset-right)); top: 50%; translate: 0 -50%; opacity: 0; transition: opacity .8s; pointer-events: none; }
 #chrome.in { opacity: 1; pointer-events: auto; }
@@ -275,9 +290,12 @@ dd { min-width: 0; }
 
 /* Phones: the card sits in the sky, the painting and the dog below it. */
 @media (max-width: 760px), (max-aspect-ratio: 9/10) {
-  .pin { align-items: flex-start; padding-top: max(56px, calc(env(safe-area-inset-top) + 44px)); }
-  .card { width: min(350px, 100%); margin: 0 auto; align-self: flex-start; gap: 3px; padding: 0 4px; }
-  .card, .finale-in { border-width: 20px; border-image-width: 20px; }
+  .pin {
+    align-items: flex-start; padding-top: max(56px, calc(env(safe-area-inset-top) + 44px));
+    padding-inline: max(8px, env(safe-area-inset-left, 0px)) max(8px, env(safe-area-inset-right, 0px));
+  }
+  .card { width: 100%; max-width: 560px; margin: 0 auto; align-self: flex-start; gap: 3px; padding: 0 6px; }
+  .card, .finale-in { border-width: 20px; border-image-width: 20px; filter: none; }
   .card h2 { font-size: 50px; }
   .tag { font-size: 15px; }
   .when { padding: 3px 0; }
@@ -285,19 +303,20 @@ dd { min-width: 0; }
   dl { font-size: 14.5px; gap: 2px; }
   .actions { margin-top: 3px; }
   .btn { padding: 8px 16px; }
-  .sprig { width: 92px; right: -30px; top: -26px; }
-  .finale { align-items: flex-end; justify-content: center; padding: 0 12px max(10px, env(safe-area-inset-bottom)); }
-  .finale-in { gap: 7px; }
+  .sprig { width: 92px; right: -16px; top: -26px; }
+  .finale { align-items: flex-end; justify-content: center; padding: 0 8px max(8px, env(safe-area-inset-bottom)); }
+  .finale-in { width: 100%; max-width: 560px; gap: 7px; }
   .finale h2 { font-size: 50px; }
   .mini button { padding: 3px 2px; }
-  #chrome { right: 2px; }
+  #chrome { right: 2px; top: 64%; }
+  html[data-chapter='see-you'] #chrome { opacity: 0; pointer-events: none; }
+  #spin p { left: 50%; bottom: auto; top: max(24px, calc(env(safe-area-inset-top) + 16px)); }
   #dots button { width: 22px; height: 22px; }
   #dots button::before { width: 6px; height: 6px; }
 }
 /* Short phones: drop the luxuries so the card stays out of the painting. */
 @media (max-height: 700px) and (max-aspect-ratio: 9/10) {
   .pin { padding-top: max(8px, env(safe-area-inset-top)); }
-  .card { width: min(310px, calc(100% - 44px)); }
   .tag { display: none; }
   .card h2 { font-size: 42px; }
   .when b { font-size: 26px; }

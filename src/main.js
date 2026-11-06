@@ -7,6 +7,7 @@ import gsap from 'gsap';
 import { invite } from './config.js';
 import { renderStory, startCountdown, icsFile } from './ui/story.js';
 import { Music } from './audio.js';
+import { mountExtras } from './ui/extras.js';
 import { detectDevice } from './device.js';
 import { clamp, damp } from './world/kit.js';
 
@@ -27,6 +28,7 @@ startCountdown(story);
 document.title = `${invite.couple.first} & ${invite.couple.second}`;
 
 const chapters = [...document.querySelectorAll('.chapter')];
+const extras = mountExtras();
 
 // Each chapter pins inside a taller stop: the scene holds while you scroll, then moves on.
 const stops = chapters.map((c) => {
@@ -97,6 +99,10 @@ function setActive(i) {
   chapters.forEach((c, k) => c.classList.toggle('on', k === i));
   document.querySelectorAll('#dots button').forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
   html.dataset.chapter = chapters[i].dataset.themeEvent ?? chapters[i].id;
+  // The hero has its own cue; every other chapter names the one below it.
+  const below = invite.events[i];
+  if (i === 0 || i >= chapters.length - 1) extras.setNext(null);
+  else extras.setNext(i + 1, below ? `Next: ${below.title}` : invite.closingTitle);
 }
 
 // Card flowers load as their chapter comes up, at the size this device needs.

@@ -40,6 +40,7 @@ export class Stage {
     this.events = events;
     this.scenes = events.map((e, i) => this.build(e, i));
     this.active = -1;
+    this.warmed = -1;
     this.W = 0;
     this.H = 0;
     this.resize();
@@ -76,7 +77,7 @@ export class Stage {
     }
     const r = rand(97 + i * 31);
     const cloudImgs = [];
-    for (let k = 0; k < (this.lite ? 0 : def.clouds); k++) {
+    for (let k = 0; k < (this.lite ? 0 : Math.min(def.clouds, this.fewer ? 2 : 3)); k++) {
       const n = img('cloud', clouds);
       n.dataset.src = `${small}cloud${k % 3}.webp`;
       n.style.cssText = `top:${4 + r() * 26}%;left:${-10 + r() * 70}%;--dur:${70 + r() * 60}s;--delay:${-r() * 60}s`;
@@ -84,7 +85,7 @@ export class Stage {
     }
     const fg = el('div', 'fg', box);
     const petals = el('div', 'petals', box);
-    const n = this.lite ? 4 : this.fewer ? 6 : 9;
+    const n = this.lite ? 4 : this.fewer ? 5 : 9;
     const petalImgs = [];
     if (!this.reduced) {
       for (let k = 0; k < n; k++) {
@@ -210,14 +211,28 @@ export class Stage {
     if (i === this.active) return;
     this.scenes.forEach((s, k) => s.box.classList.toggle('on', k === i));
     this.active = i;
+    if (this.warmed === i) { this.scenes[i].box.classList.remove('warm'); this.warmed = -1; }
   }
 
-  update(p) {
-    const i = this.active;
+  // Puts a neighbour on screen behind the active scene, so the swap costs nothing.
+  warm(i, p) {
+    const s = this.scenes[i];
+    const next = s?.decoded && i !== this.active ? i : -1;
+    if (next !== this.warmed) {
+      this.scenes[this.warmed]?.box.classList.remove('warm');
+      s?.box.classList.toggle('warm', next >= 0);
+      this.warmed = next;
+    }
+    if (next >= 0) this.update(p, next);
+  }
+
+  update(p, i = this.active) {
     if (i < 0) return;
     const s = this.scenes[i], o = this.place(i, p), l = s.last;
+    const step = window.devicePixelRatio || 1;
     const put = (n, key, x, y = 0) => {
-      const v = Math.round(x * 2) / 2;
+      // Whole device pixels: the smallest step the eye can see, so slow layers glide.
+      const v = Math.round(x * step) / step;
       if (l[key] === v) return;
       l[key] = v;
       n.style.transform = `translate3d(${v}px,${y}px,0)`;
