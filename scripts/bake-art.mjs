@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 
 const browser = await chromium.launch({ channel: 'chrome' });
 const page = await browser.newPage();
-await page.goto('http://localhost:5173/scripts/bake-art.html');
+await page.goto(`http://localhost:${process.env.PORT ?? 5173}/scripts/bake-art.html`);
 await page.waitForFunction(() => window.ready);
 const files = await page.evaluate(() => window.bake());
 const dir = resolve('public/v1/art');

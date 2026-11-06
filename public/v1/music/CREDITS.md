@@ -1,10 +1,10 @@
 # Music credits
 
-## nadaswaram-thavil.mp3
+## vivaldi-spring.mp3 and vivaldi-spring-lo.mp3
 
-- **Instruments:** nadaswaram and thavil, the mangala vadyam ensemble played at South Indian Hindu weddings
-- **Recording:** "Thakil & Nadaswaram during temple Deeparadhana" by Vis M, 23 October 2022
-- **Source:** https://commons.wikimedia.org/wiki/File:Thakil_%26_Nadaswaram_during_temple_Deeparadhana.ogg
-- **Licence:** CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
-- **Required:** keep the credit line on the invite.
-- **Changes made:** cut to the two minutes from 5:00 to 7:00, normalised for loudness, treble softened, fades added.
+- **Work:** Antonio Vivaldi, The Four Seasons, Concerto No. 1 in E major, Op. 8, RV 269, "La primavera" (Spring), movement 1, Allegro
+- **Performer:** John Harrison, violin. Live performance, Wiedemann Recital Hall, Wichita State University
+- **Source:** https://commons.wikimedia.org/wiki/File:Vivaldi_-_Four_Seasons_1_Spring_mvt_1_Allegro_-_John_Harrison_violin.oga
+- **Licence:** CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+- **Required:** keep the credit line on the invite. These edited audio files are shared under the same licence.
+- **Changes made:** trimmed, normalised for loudness, fades added. The -lo file is a smaller mono encode for lower-tier devices.

@@ -206,13 +206,13 @@ function balloon(bag, c1, c2) {
 }
 
 // Everything that orbits the planet: clouds, balloons, rings of gold.
-export function createSkyObjects(q) {
+export function createSkyObjects(p) {
   const group = new THREE.Group();
   const ticks = [];
   const r = rng(404);
   const geos = [cloudGeo(2), cloudGeo(8), cloudGeo(15)];
   const cloudMat = vertexSoft({ roughness: 1, emissive: '#fff4f6', emissiveIntensity: 0.12 });
-  const n = q ? 14 : 9;
+  const n = p.clouds;
   const clouds = new THREE.Group();
   for (let i = 0; i < n; i++) {
     const m = new THREE.Mesh(geos[i % 3], cloudMat);
@@ -228,7 +228,7 @@ export function createSkyObjects(q) {
   ticks.push((t, dt) => { clouds.rotation.z += dt * 0.012; });
 
   const balloons = new THREE.Group();
-  [['#ffc4d2', '#fff6ec', 0.9, 13.6, -4], ['#c9efdb', '#fff6ec', 2.9, 14.3, -3], ['#fff0b5', '#ffc9a0', 4.6, 13.3, -5], ['#dacdfb', '#fff6ec', 5.7, 14, -3]].forEach(([a, b, ang, rad, z], i) => {
+  [['#ffc4d2', '#fff6ec', 0.9, 13.6, -4], ['#c9efdb', '#fff6ec', 2.9, 14.3, -3], ['#fff0b5', '#ffc9a0', 4.6, 13.3, -5], ['#dacdfb', '#fff6ec', 5.7, 14, -3]].slice(0, p.balloons).forEach(([a, b, ang, rad, z], i) => {
     const bag = new Bag();
     balloon(bag, a, b);
     const m = bag.build();

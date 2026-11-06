@@ -12,6 +12,7 @@ import { renderStory } from './story.js';
 import { Stage, REST } from './stage.js';
 import { PaintedDog } from './dog.js';
 import { ART, artTier, musicSrc } from './tier.js';
+import { detectDevice } from '../device.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const html = document.documentElement;
@@ -20,8 +21,9 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || innerWidth < 760;
 // A page can opt out of the beagle: <html data-variant="nodog">.
 const withDog = html.dataset.variant !== 'nodog';
-const tier = artTier(params);
-const audio = new Music(musicSrc(tier));
+const device = detectDevice(params);
+const tier = artTier(device);
+const audio = new Music(musicSrc(device));
 
 $('#versions').hidden = !params.has('review');
 
@@ -265,7 +267,7 @@ const loadImage = (src) => new Promise((res) => {
 
 async function boot() {
   layout();
-  if (!webglOK() || params.has('nogl')) return showPlainInvite();
+  if (device.tier === 'plain' || !webglOK() || params.has('nogl')) return showPlainInvite();
   const bar = $('#loader .fill');
   const onStep = (k) => { bar.style.transform = `scaleX(${k})`; };
 
@@ -277,11 +279,10 @@ async function boot() {
 
   const [{ PaintedWorld }, { createIntro }, { Bleed }, THREE, art, noise] = await Promise.all([
     import('./world.js'), import('../world/intro.js'), import('./bleed.js'), import('three'),
-    loadImage('../v1/art/card.webp'), loadImage(`${ART}noise.webp`),
+    loadImage(`../v1/art/card${device.preset.smallArt ? '-s' : ''}.webp`), loadImage(`${ART}noise.webp`),
   ]);
 
-  const high = params.has('low') ? false : !mobile;
-  world = new PaintedWorld($('#gl'), events, { high });
+  world = new PaintedWorld($('#gl'), events, device);
   world.cardArt = art;
   await world.build(onStep);
   if (mobile) world.easePhone();
@@ -326,6 +327,8 @@ async function boot() {
     const key = which === 'first' ? 0 : 1;
     if (snapFor === key) return;
     const s = shots[which];
+    // On the lowest tier this diorama may have been released, so fetch it ahead of the shot.
+    world.ensureSet(events[s.i].id);
     const scene = stage.scenes[s.i];
     stage.load(s.i);
     if (!scene.decoded) return;
@@ -423,12 +426,12 @@ async function boot() {
   spinEl.addEventListener('pointercancel', letGo);
 
   // Same pacing rules as V1: smoothed time, and every other frame on 120Hz screens.
-  let smooth = 1 / 60, elapsed = 0, minGap = 0;
+  let smooth = 1 / 60, elapsed = 0, minGap = device.preset.frameMs;
   const gaps = [];
   gsap.ticker.add((time, deltaMs) => {
     if (gaps.length < 60) {
       gaps.push(deltaMs);
-      if (gaps.length === 60 && [...gaps].sort((a, b) => a - b)[30] < 10) minGap = 12;
+      if (gaps.length === 60 && [...gaps].sort((a, b) => a - b)[30] < 10) minGap = Math.max(minGap, 12);
     }
     elapsed += deltaMs;
     if (elapsed < minGap) return;
@@ -444,11 +447,13 @@ async function boot() {
   const introEl = $('#intro');
   introEl.classList.add('ready');
   $('#tap').addEventListener('click', () => {
+    world.quiet = false;
     audio.start();
     introEl.classList.add('started');
     intro.start();
   });
   $('#skip').addEventListener('click', () => {
+    world.quiet = false;
     audio.start();
     intro.skip();
   });

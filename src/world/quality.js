@@ -9,14 +9,16 @@ const STEPS = [
   { density: 0.6, scale: 1 },
   { density: 0.35, scale: 1 },
   { density: 0.35, scale: 0.8 },
+  { density: 0.25, scale: 0.8, shadows: false },
 ];
-const SLOW_MS = 24;     // under about 42fps
-const FAST_MS = 15;
 const MIN_RATIO = 1;    // device pixels per CSS pixel, never lower
 
 export class Quality {
   constructor(world) {
     this.world = world;
+    // A 30fps tier is allowed its 33ms; everyone else should hold about 42fps or better.
+    this.slowMs = Math.max(24, world.p.frameMs * 1.45);
+    this.fastMs = Math.max(15, world.p.frameMs * 1.15);
     this.level = 0;
     this.ms = 16;
     this.slowFor = 0;
@@ -34,6 +36,7 @@ export class Quality {
     const native = Math.min(window.devicePixelRatio || 1, 2);
     const scale = Math.max(s.scale, Math.min(1, MIN_RATIO / native));
     if (scale !== w.pixelRatio) { w.pixelRatio = scale; w.resize(); }
+    if (s.shadows === false && w.p.shadows) { w.p = { ...w.p, shadows: false }; w.sun.castShadow = false; }
     this.history.push({ at: Math.round(performance.now() / 1000), level, reason, ms: +this.ms.toFixed(1) });
   }
 
@@ -42,8 +45,8 @@ export class Quality {
     this.ms += (ms - this.ms) * 0.05;
     this.cool -= dt;
     if (this.cool > 0) return;
-    this.slowFor = this.ms > SLOW_MS ? this.slowFor + dt : 0;
-    this.fastFor = this.ms < FAST_MS ? this.fastFor + dt : 0;
+    this.slowFor = this.ms > this.slowMs ? this.slowFor + dt : 0;
+    this.fastFor = this.ms < this.fastMs ? this.fastFor + dt : 0;
 
     // Judge the last step once its effect has settled.
     if (this.trial && (this.trial.left -= dt) <= 0) {
@@ -56,7 +59,7 @@ export class Quality {
       }
     }
 
-    const moving = Math.abs(s - Math.round(s)) > 0.12;
+    const moving = this.world.quiet || Math.abs(s - Math.round(s)) > 0.12;
     if (!moving) return;
 
     if (this.pending) {

@@ -9,8 +9,9 @@ export const invite = {
 
   // Background music, from public/v1/music. Licence details are in CREDITS.md there,
   // and this recording needs its credit line kept. Leave music empty for silence.
-  music: 'music/nadaswaram-thavil.mp3',
-  musicCredit: 'Music: nadaswaram and thavil, recorded by Vis M. <a href="https://commons.wikimedia.org/wiki/File:Thakil_%26_Nadaswaram_during_temple_Deeparadhana.ogg" target="_blank" rel="noopener">CC BY 4.0</a>',
+  // Named without an extension: phones on lower tiers get the smaller -lo.mp3 file.
+  music: 'music/vivaldi-spring',
+  musicCredit: 'Music: Vivaldi, Spring. John Harrison, violin. <a href="https://commons.wikimedia.org/wiki/File:Vivaldi_-_Four_Seasons_1_Spring_mvt_1_Allegro_-_John_Harrison_violin.oga" target="_blank" rel="noopener">CC BY-SA 4.0</a>',
 
   // Envelope + card wording
   envelopeLine: "You're invited",

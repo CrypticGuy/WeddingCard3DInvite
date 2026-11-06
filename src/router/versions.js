@@ -6,7 +6,7 @@ export const versions = [
     title: 'The tiny planet',
     status: 'in review',
     summary: 'One continuous 3D world. The beagle opens the envelope, then walks around a pastel planet from event to event.',
-    notes: ['Full 3D throughout', 'Nadaswaram and thavil'],
+    notes: ['Full 3D throughout', 'Vivaldi, Spring'],
   },
   {
     id: 'v2',

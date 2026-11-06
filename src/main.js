@@ -7,13 +7,16 @@ import gsap from 'gsap';
 import { invite } from './config.js';
 import { renderStory, startCountdown, icsFile } from './ui/story.js';
 import { Music } from './audio.js';
+import { detectDevice } from './device.js';
 import { clamp, damp } from './world/kit.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const html = document.documentElement;
 const params = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const audio = new Music(invite.music);
+const device = detectDevice(params);
+const small = device.preset?.smallArt;
+const audio = new Music(invite.music ? `${invite.music}${device.preset?.lowMusic ? '-lo' : ''}.mp3` : '');
 
 // Reached from the versions page: offer the way back. Guests never see this.
 $('#versions').hidden = !params.has('review');
@@ -39,9 +42,18 @@ let active = -1;
 function setActive(i) {
   if (i === active) return;
   active = i;
+  loadArt(i);
+  loadArt(i + 1);
   chapters.forEach((c, k) => c.classList.toggle('on', k === i));
   document.querySelectorAll('#dots button').forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
   html.dataset.chapter = chapters[i].dataset.themeEvent ?? chapters[i].id;
+}
+
+// Card flowers load as their chapter comes up, at the size this device needs.
+function loadArt(i) {
+  const img = chapters[i]?.querySelector('img[data-art]');
+  if (!img || img.src) return;
+  img.src = `${img.dataset.art}${small ? '-s' : ''}.webp`;
 }
 
 function buildDots() {
@@ -78,6 +90,7 @@ function unlockScroll() {
 
 function showPlainInvite() {
   html.classList.add('no-gl');
+  chapters.forEach((c, i) => loadArt(i));
   $('#loader').remove();
   $('#intro').remove();
   unlockScroll();
@@ -90,17 +103,17 @@ function webglOK() {
   } catch { return false; }
 }
 
-async function loadArt() {
+async function loadCardImage() {
   return new Promise((res) => {
     const i = new Image();
     i.onload = () => res(i);
     i.onerror = () => res(null);
-    i.src = 'art/card.webp';
+    i.src = `art/card${small ? '-s' : ''}.webp`;
   });
 }
 
 async function boot() {
-  if (!webglOK()) return showPlainInvite();
+  if (device.tier === 'plain' || !webglOK()) return showPlainInvite();
   const bar = $('#loader .fill');
   const onStep = (k) => { bar.style.transform = `scaleX(${k})`; };
 
@@ -110,11 +123,9 @@ async function boot() {
     document.fonts.load('500 30px "Jost Variable"'),
   ]).catch(() => {});
 
-  const [{ World }, { createIntro }, art] = await Promise.all([import('./world/world.js'), import('./world/intro.js'), loadArt()]);
+  const [{ World }, { createIntro }, art] = await Promise.all([import('./world/world.js'), import('./world/intro.js'), loadCardImage()]);
 
-  const mobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || innerWidth < 760;
-  const high = params.has('low') ? false : !mobile;
-  const world = new World($('#gl'), invite.events, { high });
+  const world = new World($('#gl'), invite.events, device);
   world.cardArt = art;
   await world.build(onStep);
 
@@ -155,13 +166,13 @@ async function boot() {
     world.frame(dt, t);
   };
   // 120Hz screens draw every other frame: same smoothness here, half the heat.
-  let elapsed = 0, minGap = 0;
+  let elapsed = 0, minGap = device.preset.frameMs;
   const gaps = [];
   gsap.ticker.add((time, deltaMs) => {
     if (gaps.length < 60) {
       gaps.push(deltaMs);
       // The median ignores the slow frames that happen while the page settles.
-      if (gaps.length === 60 && [...gaps].sort((a, b) => a - b)[30] < 10) minGap = 12;
+      if (gaps.length === 60 && [...gaps].sort((a, b) => a - b)[30] < 10) minGap = Math.max(minGap, 12);
     }
     elapsed += deltaMs;
     if (elapsed < minGap) return;
@@ -189,11 +200,13 @@ async function boot() {
   const introEl = $('#intro');
   introEl.classList.add('ready');
   $('#tap').addEventListener('click', () => {
+    world.quiet = false;
     audio.start();
     introEl.classList.add('started');
     intro.start();
   });
   $('#skip').addEventListener('click', () => {
+    world.quiet = false;
     audio.start();
     intro.skip();
   });

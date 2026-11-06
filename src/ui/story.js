@@ -65,7 +65,7 @@ function eventCard(e, i) {
   return `
   <section class="chapter event" id="${esc(e.id)}" data-chapter="${i + 1}" data-theme-event="${esc(e.id)}" aria-label="${esc(e.title)}">
     <article class="card">
-      <img class="spray" src="art/spray-${esc(e.id)}.webp" alt="" width="520" height="520">
+      <img class="spray" data-art="art/spray-${esc(e.id)}" alt="" width="520" height="520">
       <div class="card-in">
         <p class="eyebrow r1">${part(d, { weekday: 'long' })} ${timeOfDay(d)}</p>
         <h2 aria-label="${esc(e.title)}">${letters(e.title)}</h2>
