@@ -95,7 +95,9 @@ export function startMonitor(world) {
     screen: `${screen.width}x${screen.height} @${devicePixelRatio}`,
     cores: navigator.hardwareConcurrency ?? null,
     deviceMemoryGB: navigator.deviceMemory ?? null,
-    tier: world.high ? 'full' : 'phone',
+    tier: world.device.tier,
+    tierReasons: world.device.reasons,
+    signals: world.device.signals,
   };
 
   function sample() {
@@ -159,6 +161,7 @@ export function startMonitor(world) {
   setInterval(() => {
     const s = sample();
     text.textContent = [
+      `tier ${device.tier}   ${device.tierReasons.join(', ') || 'no limits'}`,
       `${s.fps} fps   frame ${s.frameP50}ms   worst ${s.frameMax}ms`,
       `long frames ${s.longFrames}/s   quality ${s.level}   res x${s.dpr}`,
       `GPU work ${s.gpuMs == null ? na : `${s.gpuMs}ms`}`,

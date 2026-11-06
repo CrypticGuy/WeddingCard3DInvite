@@ -14,10 +14,10 @@ const PHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile Saf
 
 // CPU slowdown is an approximation of each device class. GPU speed cannot be emulated.
 const profiles = [
-  { name: 'Budget Android', w: 360, h: 640, dpr: 2, cpu: 6, ua: PHONE },
-  { name: 'iPhone SE class', w: 375, h: 667, dpr: 2, cpu: 4, ua: PHONE },
-  { name: 'Mid Android', w: 412, h: 915, dpr: 2.6, cpu: 3, ua: PHONE },
-  { name: 'New iPhone class', w: 393, h: 852, dpr: 3, cpu: 1.5, ua: PHONE },
+  { name: 'Budget Android', w: 360, h: 640, dpr: 2, cpu: 6, ua: PHONE, tier: 'lite' },
+  { name: 'iPhone SE class', w: 375, h: 667, dpr: 2, cpu: 4, ua: PHONE, tier: 'medium' },
+  { name: 'Mid Android', w: 412, h: 915, dpr: 2.6, cpu: 3, ua: PHONE, tier: 'medium' },
+  { name: 'New iPhone class', w: 393, h: 852, dpr: 3, cpu: 1.5, ua: PHONE, tier: 'high' },
 ];
 
 function rssMB(pids) {
@@ -42,7 +42,7 @@ async function runProfile(p, url) {
   const page = await ctx.newPage();
   const problems = [];
   page.on('pageerror', (e) => problems.push(e.message));
-  await page.goto(url);
+  await page.goto(`${url}&tier=${p.tier}`);
   await page.waitForFunction(() => window.__perf, null, { timeout: 90000 });
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: p.cpu });

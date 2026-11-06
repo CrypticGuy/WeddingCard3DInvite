@@ -105,10 +105,10 @@ const slope = (r, k) => {
 };
 
 function summary() {
-  const head = ['Device', 'Median fps', 'Worst 5% fps', 'Slow frame', 'Long frames', 'JS memory', 'Memory trend', 'GPU memory', 'Peak triangles', 'Quality changes'];
+  const head = ['Device', 'Tier', 'Median fps', 'Worst 5% fps', 'Slow frame', 'Long frames', 'JS memory', 'Memory trend', 'GPU memory', 'Peak triangles', 'Quality changes'];
   const rows = runs.map((r, i) => {
     const f = vals(r, 'fps'), sl = slope(r, 'heapMB');
-    return `<tr><td><span class="key" style="background:${color(i)}"></span>${r.name}</td>
+    return `<tr><td><span class="key" style="background:${color(i)}"></span>${r.name}</td><td>${r.device?.tier ?? 'n/a'}</td>
       <td>${fmt(pct(f, .5))}</td><td>${fmt(pct(f, .05))}</td><td>${fmt(pct(vals(r, 'frameP95'), .5), 'ms')}</td>
       <td>${vals(r, 'longFrames').reduce((a, b) => a + b, 0)}</td>
       <td>${fmt(pct(vals(r, 'heapMB'), .95), 'MB')}</td><td>${sl == null ? 'run longer' : `${sl >= 0 ? '+' : ''}${sl.toFixed(2)} MB/min`}</td>

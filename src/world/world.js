@@ -1,13 +1,8 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { shared, clamp, lerp, sstep, damp, rng, soft } from './kit.js';
+import { shared, clamp, lerp, sstep, damp, rng, soft, profile } from './kit.js';
 import { R, ZONES, createTerrain, createGround, createFlora, createWater, dirAt } from './planet.js';
 import { Quality } from './quality.js';
-import { builders, place } from './props.js';
+import { loaders, RADIUS, place } from './props/index.js';
 import { Beagle } from './beagle.js';
 import { createEnvelope, Thread, CARD_H, CARD_W } from './envelope.js';
 import { ambientPetals, Burst, Hearts, createSkyObjects } from './particles.js';
@@ -28,46 +23,17 @@ const MOODS = {
   finale: mood('#6f7fcf', '#d7a8df', '#ffcfbd', '#ffe4d0', 1.4, '#e2d8fb', '#f2d2dc', 1.4, '#ffdfea', 0.6),
 };
 
-const PostShader = {
-  uniforms: {
-    tDiffuse: { value: null }, uRes: { value: new THREE.Vector2(1, 1) }, uBlur: { value: 0 },
-    uFocus: { value: 0.5 }, uBand: { value: 0.22 }, uTime: { value: 0 }, uVig: { value: 0.16 },
-  },
-  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-  fragmentShader: `
-    varying vec2 vUv; uniform sampler2D tDiffuse; uniform vec2 uRes;
-    uniform float uBlur, uFocus, uBand, uTime, uVig;
-    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
-    void main(){
-      float d = abs(vUv.y - uFocus);
-      float rad = uBlur * smoothstep(uBand, uBand + 0.34, d);
-      vec3 c = texture2D(tDiffuse, vUv).rgb;
-      if (rad > 0.15) {
-        vec3 acc = c; float w = 1.;
-        float rot = h(vUv * uRes) * 6.283;
-        for (int i = 1; i < 14; i++) {
-          float fi = float(i);
-          float r = sqrt(fi / 13.) * rad;
-          float a = fi * 2.39996 + rot;
-          acc += texture2D(tDiffuse, vUv + vec2(cos(a), sin(a)) * r / uRes).rgb; w += 1.;
-        }
-        c = acc / w;
-      }
-      vec2 q = vUv - .5;
-      c *= 1. - uVig * smoothstep(.3, .85, length(q));
-      c += (h(vUv * uRes + uTime) - .5) * .012;
-      gl_FragColor = vec4(c, 1.);
-    }`,
-};
-
 const smoother = (t) => t * t * t * (t * (t * 6 - 15) + 10);
 const v3 = (a) => new THREE.Vector3(...a);
 
 export class World {
-  constructor(canvas, events, { high }) {
+  constructor(canvas, events, device) {
     this.canvas = canvas;
     this.events = events;
-    this.high = high;
+    this.device = device;
+    this.p = device.preset;
+    this.high = this.p.post;
+    Object.assign(profile, { lambert: this.p.lambert, smallBall: this.p.smallBall, sdf: this.p.sdf });
     this.chapters = ['hero', ...events.map((e) => e.id), 'finale'];
     const step = (Math.PI * 2) / (events.length + 1);
     this.stops = [{ id: 'start', zone: 'start', phi: 0 }, ...events.map((e, i) => ({ id: e.id, zone: ZONES[e.id] ? e.id : 'start', phi: (i + 1) * step }))];
@@ -86,6 +52,8 @@ export class World {
     this.pointerS = new THREE.Vector2();
     this.ticks = [];
     this.skyTicks = [];
+    this.sets = {};
+    this.quiet = true;   // waiting for the first tap, so quality changes go unseen
     this.pixelRatio = 1;
     this.frames = 0;
     this.lastShadowTheta = 1e9;
@@ -95,7 +63,7 @@ export class World {
     const pause = () => new Promise((r) => setTimeout(r, 0));
     const r = (this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: !this.high, powerPreference: 'high-performance' }));
     r.toneMapping = THREE.NoToneMapping;
-    r.shadowMap.enabled = true;
+    r.shadowMap.enabled = this.p.shadows;
     r.shadowMap.type = THREE.PCFShadowMap;
     r.shadowMap.autoUpdate = false;   // redrawn only when something moves
     this.scene = new THREE.Scene();
@@ -108,24 +76,17 @@ export class World {
     this.roll = new THREE.Group();
     this.scene.add(this.roll);
     this.terrain = createTerrain(this.stops);
-    this.roll.add(createGround(this.terrain, this.high ? 96 : 64));
+    this.roll.add(createGround(this.terrain, this.p.ground));
     this.water = createWater();
     this.roll.add(this.water);
     onStep(0.3); await pause();
 
     // Dioramas first, so flowers know where not to grow.
-    const rand = rng(31);
     this.footprints = [];
     this.bulbMat = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.lanternMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.95, 0.72) });
     for (const stop of this.stops) {
-      const make = builders[stop.id];
-      if (!make) continue;
-      const p = stop.id === 'sangeet' ? make(rand, this.bulbMat, this.lanternMat) : make(rand, this.high);
-      place(p.root, this.terrain, stop.phi, -2.05, 0.75);
-      this.roll.add(p.root);
-      this.ticks.push(...p.ticks);
-      this.footprints.push({ d: dirAt(stop.phi + 0.75 / R, -2.05), r: p.radius });
+      if (RADIUS[stop.id]) this.footprints.push({ d: dirAt(stop.phi + 0.75 / R, -2.05), r: RADIUS[stop.id] });
     }
     onStep(0.5); await pause();
 
@@ -139,21 +100,29 @@ export class World {
       for (const f of this.footprints) if (f.d.distanceTo(d) * R < f.r * k) return true;
       return false;
     };
-    const flora = createFlora(this.terrain, this.stops, blocked, this.high);
+    const flora = createFlora(this.terrain, this.stops, blocked, this.p);
     this.roll.add(flora.group);
     this.nearFlora = flora.near;
     onStep(0.75); await pause();
 
     this.dog = new Beagle();
     this.scene.add(this.dog.root);
+    if (!this.p.shadows) {
+      // With no shadow map, a soft disc keeps the pup grounded.
+      const blob = new THREE.Mesh(new THREE.CircleGeometry(0.46, 20), new THREE.MeshBasicMaterial({ color: '#5a4a50', transparent: true, opacity: 0.16, depthWrite: false }));
+      blob.rotation.x = -Math.PI / 2;
+      blob.position.y = 0.03;
+      blob.scale.set(1.3, 0.8, 1);
+      this.dog.root.add(blob);
+    }
     this.hearts = new Hearts();
     this.scene.add(this.hearts.group);
     this.burst = new Burst();
     this.scene.add(this.burst.mesh);
-    this.petals = ambientPetals(this.high ? 300 : 90);
+    this.petals = ambientPetals(this.p.petals);
     this.scene.add(this.petals);
 
-    this.skyObjects = createSkyObjects(this.high);
+    this.skyObjects = createSkyObjects(this.p);
     this.scene.add(this.skyObjects.group);
     this.skyTicks.push(...this.skyObjects.ticks);
     onStep(0.88); await pause();
@@ -166,7 +135,11 @@ export class World {
 
     // Phones skip post-processing and draw straight to the screen with native
     // anti-aliasing: far cheaper, and there is no off-screen buffer to go wrong.
-    if (this.high) this.buildPost();
+    if (this.high) {
+      const { buildPost } = await import('./post.js');
+      Object.assign(this, buildPost(this.renderer, this.scene, this.camera));
+      await Promise.all(this.events.map((e) => this.ensureSet(e.id)));
+    }
     this.quality = new Quality(this);
     this.resize();
     this.setMood(MOODS.intro);
@@ -225,9 +198,9 @@ export class World {
     this.sun = new THREE.DirectionalLight('#fff', 2);
     this.sun.position.set(-7, R + 14, 12);
     this.sun.target.position.set(0, R - 1, -1);
-    this.sun.castShadow = true;
+    this.sun.castShadow = this.p.shadows;
     const s = this.sun.shadow;
-    s.mapSize.set(this.high ? 2048 : 1024, this.high ? 2048 : 1024);
+    s.mapSize.set(this.p.shadowMap, this.p.shadowMap);
     s.camera.left = -10; s.camera.right = 10; s.camera.top = 10; s.camera.bottom = -10;
     s.camera.near = 1; s.camera.far = 42;
     s.bias = -0.0006;
@@ -236,16 +209,45 @@ export class World {
     this.scene.add(this.sun, this.sun.target);
   }
 
-  buildPost() {
-    const target = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: this.high ? 4 : 2 });
-    const c = (this.composer = new EffectComposer(this.renderer, target));
-    c.addPass(new RenderPass(this.scene, this.camera));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.24, 0.5, 1.05);
-    this.bloom.enabled = this.high;
-    c.addPass(this.bloom);
-    this.post = new ShaderPass(PostShader);
-    c.addPass(this.post);
-    c.addPass(new OutputPass());
+  // Fetch and build one diorama, off the critical path.
+  async ensureSet(id) {
+    if (this.sets[id] || !loaders[id]) return;
+    this.sets[id] = 'loading';
+    const make = await loaders[id]();
+    await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 400 }) : setTimeout(r, 30)));
+    const stop = this.stops.find((s) => s.id === id);
+    const seed = rng(31 + stop.phi * 100);
+    const set = id === 'sangeet' ? make(seed, this.bulbMat, this.lanternMat) : make(seed, this.p.pointLight);
+    place(set.root, this.terrain, stop.phi, -2.05, 0.75);
+    this.roll.add(set.root);
+    this.sets[id] = set;
+    this.refreshTicks();
+    this.lastShadowTheta = 1e9;
+  }
+
+  dropSet(id) {
+    const set = this.sets[id];
+    if (!set || set === 'loading') return;
+    this.roll.remove(set.root);
+    set.root.traverse((o) => o.geometry?.dispose());
+    delete this.sets[id];
+    this.refreshTicks();
+  }
+
+  refreshTicks() {
+    this.ticks = Object.values(this.sets).flatMap((s) => s.ticks ?? []);
+  }
+
+  // Keep the nearby dioramas ready, and on the lowest tier release the far ones.
+  manageSets() {
+    const i = Math.round(clamp(this.s, 0, this.chapters.length - 1));
+    const order = [i + 1, i, i - 1, i + 2, i - 2, i + 3, i - 3, i + 4, i - 4];
+    for (const c of order) {
+      const id = this.chapters[c];
+      if (!loaders[id] || this.sets[id]) continue;
+      if (Math.abs(c - i) <= this.p.setWindow) { this.ensureSet(id); break; }
+    }
+    this.chapters.forEach((id, c) => { if (Math.abs(c - i) > this.p.setWindow + 1) this.dropSet(id); });
   }
 
   setMood(m) {
@@ -277,7 +279,7 @@ export class World {
     // The canvas is sized to the tallest viewport in CSS, so a phone's address bar
     // sliding away changes nothing here and costs nothing.
     const w = this.canvas.clientWidth || window.innerWidth, h = this.canvas.clientHeight || window.innerHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.pixelRatio;
+    const dpr = Math.min(window.devicePixelRatio || 1, this.p.dprCap) * this.pixelRatio;
     if (w === this.w && h === this.h && dpr === this.dpr) return;
     this.w = w; this.h = h;
     this.aspect = w / h;
@@ -454,6 +456,7 @@ export class World {
     this.applyCamera(dt);
     this.applyMood();
     this.updateDog(dt, t);
+    if (this.frames % 20 === 0) this.manageSets();
     for (const f of this.ticks) f(t, dt);
     for (const f of this.skyTicks) f(t, dt);
     this.burst.update(dt, t);
@@ -467,7 +470,7 @@ export class World {
     this.frames++;
     // Shadows only change when the planet turns or the pup is performing.
     const turned = Math.abs(this.theta - this.lastShadowTheta) > 0.0008;
-    if (turned || this.introBlend < 1 || this.frames % 10 === 0) {
+    if (this.p.shadows && (turned || this.introBlend < 1 || this.frames % 10 === 0)) {
       this.renderer.shadowMap.needsUpdate = true;
       this.lastShadowTheta = this.theta;
     }

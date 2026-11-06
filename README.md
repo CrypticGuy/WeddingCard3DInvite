@@ -21,7 +21,11 @@ npm install
 npm run dev
 ```
 
-Useful URL flags: `?skip` jumps past the opening, `?low` forces the phone quality level, `?perf` shows the performance monitor.
+Useful URL flags: `?skip` jumps past the opening, `?perf` shows the performance monitor, `?tier=lite|medium|high|full|plain` forces a quality tier.
+
+## Device tiers
+
+[`src/device.js`](src/device.js) picks a tier before heavy code loads, from RAM, CPU cores, GPU name, data saver, network, screen size and a short GPU and CPU speed test. The presets in that file set everything each tier draws and downloads. `src/world/quality.js` then lowers density further at runtime if frames still run slow.
 
 ## Publish
 

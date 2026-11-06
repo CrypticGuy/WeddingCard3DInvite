@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { profile } from './kit.js';
 
 // SDF toolkit + naive surface nets. This is how the beagle, clouds and tree
 // canopies get a sculpted clay look without shipping a single model file.
@@ -21,7 +22,8 @@ export const cone = (x, y, z, ax, ay, az, bx, by, bz, r1, r2) => {
 const CORNERS = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1],[0,1,1],[1,1,1]];
 const EDGES = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
 
-export function sdfGeometry({ sdf, color, min, max, cell }) {
+export function sdfGeometry({ sdf, color, min, max, cell: baseCell }) {
+  const cell = baseCell * profile.sdf;
   const nx = Math.ceil((max[0] - min[0]) / cell) + 1;
   const ny = Math.ceil((max[1] - min[1]) / cell) + 1;
   const nz = Math.ceil((max[2] - min[2]) / cell) + 1;

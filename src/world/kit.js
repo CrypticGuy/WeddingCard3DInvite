@@ -48,6 +48,16 @@ const RIM = `float rimF = pow(1.0 - saturate(dot(normalize(vViewPosition), norma
   outgoingLight += uRim * rimF * uRimK;
   #include <opaque_fragment>`;
 
+// Set once from the device preset, before anything is built.
+export const profile = { lambert: false, smallBall: 0.075, sdf: 1 };
+
+// Lambert lighting costs a fraction of physically based shading on weak GPUs.
+function material(opts) {
+  if (!profile.lambert) return new THREE.MeshStandardMaterial(opts);
+  const { roughness, metalness, ...rest } = opts;
+  return new THREE.MeshLambertMaterial(rest);
+}
+
 function patchRim(mat) {
   mat.onBeforeCompile = (s) => {
     s.uniforms.uRim = shared.uRim;
@@ -60,13 +70,13 @@ function patchRim(mat) {
 }
 
 export function soft(opts = {}) {
-  return patchRim(new THREE.MeshStandardMaterial({ roughness: 0.78, metalness: 0, ...opts }));
+  return patchRim(material({ roughness: 0.78, metalness: 0, ...opts }));
 }
 export const vertexSoft = (opts = {}) => soft({ vertexColors: true, ...opts });
 
 // Instanced plants: per-vertex aTint (1 = takes instance colour) and aSway (wind weight).
 export function windMaterial(opts = {}, grow = false) {
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, ...opts });
+  const mat = material({ vertexColors: true, roughness: 0.85, ...opts });
   mat.customProgramCacheKey = () => (grow ? 'wind-grow' : 'wind');
   mat.onBeforeCompile = (s) => {
     s.uniforms.uTime = shared.uTime;
@@ -136,7 +146,7 @@ export class Bag {
     return this;
   }
   ball(p, r, color, s = [1, 1, 1], detail = 2, gradientTo) {
-    const small = r < 0.075;
+    const small = r < profile.smallBall;
     const g = new THREE.IcosahedronGeometry(r, small ? 0 : detail);
     if (small) {
       // At this size a plain icosahedron reads as round if its normals are smooth.

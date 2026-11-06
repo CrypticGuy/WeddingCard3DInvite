@@ -6,7 +6,8 @@ export class Music {
     this.started = false;
     this.el = null;
     if (!src) return;
-    this.el = Object.assign(new window.Audio(src), { loop: true, preload: 'metadata' });
+    this.el = Object.assign(new window.Audio(), { loop: true, preload: 'none' });
+    this.el.src = src;
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.el.pause();
       else if (this.on && this.started) this.play();

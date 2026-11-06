@@ -9,6 +9,12 @@
     return c;
   };
 
+  const shrink = (src, w, h) => {
+    const c = blank(w, h);
+    c.getContext('2d').drawImage(src, 0, 0, w, h);
+    return c.toDataURL('image/webp', 0.82);
+  };
+
   window.bake = () => {
     const out = {};
     const card = blank(1024, 1434);
@@ -18,7 +24,10 @@
       const c = blank(620, 620);
       paintSpray(c.getContext('2d'), 620, name, 40 + i * 7);
       out[`spray-${name}.webp`] = c.toDataURL('image/webp', 0.9);
+      out[`spray-${name}-s.webp`] = shrink(c, 310, 310);
     });
+    // Half-size copies for lower-tier devices.
+    for (const [name, src, w, h] of [['card-s.webp', card, 640, 896]]) out[name] = shrink(src, w, h);
     return out;
   };
   window.ready = true;

@@ -288,7 +288,7 @@ function canopyGeo(seed, cell) {
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-export function createFlora(terrain, stops, blocked, q) {
+export function createFlora(terrain, stops, blocked, p) {
   const group = new THREE.Group();
   const r = rng(77);
   const near = new THREE.Group();   // the small stuff, only drawn close to the surface
@@ -318,6 +318,7 @@ export function createFlora(terrain, stops, blocked, q) {
     return null;
   };
   const scatter = (geo, count, { minZ = 1.0, maxZ = 7.5, s0 = 0.7, s1 = 1.2, colorFn, cast = false, material = mat, front = 0, far = false, k = 1 }) => {
+    if (!count) return null;
     const im = new THREE.InstancedMesh(geo, material, count);
     im.castShadow = cast;
     im.receiveShadow = true;
@@ -357,11 +358,11 @@ export function createFlora(terrain, stops, blocked, q) {
   };
 
   // Close-up plants stay near the path, where the camera can actually see them.
-  scatter(tuftGeo(), q ? 4400 : 2800, { minZ: 0.82, maxZ: 4, s0: 0.5, s1: 0.95, colorFn: grassC, k: 0.62 });
-  scatter(blossomGeo(), q ? 1300 : 800, { minZ: 0.95, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.3, k: 0.85 });
-  scatter(peonyGeo(), q ? 460 : 300, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.5 });
-  scatter(tulipGeo(), q ? 400 : 260, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 0.9, colorFn: flowerC, front: 1.5 });
-  scatter(lavenderGeo(), q ? 420 : 260, { minZ: 1.1, maxZ: 4, s0: 0.7, s1: 1.15, colorFn: flowerC, front: 1.5 });
+  scatter(tuftGeo(), p.grass, { minZ: 0.82, maxZ: 4, s0: 0.5, s1: 0.95, colorFn: grassC, k: 0.62 });
+  scatter(blossomGeo(), p.blossom, { minZ: 0.95, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.3, k: 0.85 });
+  scatter(peonyGeo(), p.peony, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 1.0, colorFn: flowerC, front: 1.5 });
+  scatter(tulipGeo(), p.tulip, { minZ: 1.0, maxZ: 4, s0: 0.55, s1: 0.9, colorFn: flowerC, front: 1.5 });
+  scatter(lavenderGeo(), p.lavender, { minZ: 1.1, maxZ: 4, s0: 0.7, s1: 1.15, colorFn: flowerC, front: 1.5 });
 
   // Flower patches carry the far side of the planet: small clusters of soft domes,
   // big enough to read as shapes from orbit, so they never shimmer.
@@ -371,7 +372,7 @@ export function createFlora(terrain, stops, blocked, q) {
     pb.add(new THREE.IcosahedronGeometry(0.24 + r() * 0.14, 1), i % 2 ? '#e6dbe2' : '#f4edf1', xf([Math.cos(a) * rad, 0, Math.sin(a) * rad], [0, 0, 0], [1, 0.6, 1]), '#ffffff');
   }
   const moundGeo = pb.build().geometry;
-  const mounds = new THREE.InstancedMesh(moundGeo, vertexSoft({ roughness: 0.9 }), q ? 130 : 90);
+  const mounds = new THREE.InstancedMesh(moundGeo, vertexSoft({ roughness: 0.9 }), p.patches);
   mounds.frustumCulled = false;
   mounds.receiveShadow = true;
   for (let i = 0; i < mounds.count; i++) {
@@ -386,7 +387,7 @@ export function createFlora(terrain, stops, blocked, q) {
   group.add(mounds);
 
   // Trees
-  const canopies = [canopyGeo(3, q ? 0.12 : 0.15), canopyGeo(11, q ? 0.12 : 0.15)];
+  const canopies = [canopyGeo(3, p.canopyCell), canopyGeo(11, p.canopyCell)];
   const treeC = (dd, c) => {
     const z = terrain.nearestZone(dd).zone;
     const pal = {
@@ -401,7 +402,7 @@ export function createFlora(terrain, stops, blocked, q) {
   trunkBag.add(new THREE.CylinderGeometry(0.035, 0.08, 0.8, 7), '#b98f7f', xf([0.26, 1.1, 0.04], [0, 0, -0.7]));
   trunkBag.add(new THREE.CylinderGeometry(0.035, 0.08, 0.8, 7), '#b98f7f', xf([-0.22, 1.2, -0.06], [0, 0, 0.6]));
   const trunkGeo = trunkBag.build().geometry;
-  const count = q ? 60 : 40;
+  const count = p.trees;
   for (let i = 0; i < count; i++) {
     const near = i % 2 === 0;
     const pt = i % 3 === 2 ? sampleFar(7) : sample(near ? 3.0 : 4.6, near ? 5.2 : 8);
