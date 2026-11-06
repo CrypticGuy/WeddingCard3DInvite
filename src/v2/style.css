@@ -145,7 +145,7 @@ html[data-variant='nodog'] #dog { display: none; }
   position: absolute; top: max(16px, env(safe-area-inset-top)); left: 50%; translate: -50% 0;
   pointer-events: auto; font-size: 13px; letter-spacing: .08em; color: #7d5a64; padding: 8px 12px; opacity: .8;
 }
-#intro.gone #skip { display: none; }
+#intro.gone #skip, html[data-variant='nodog'] #intro.started #skip { display: none; }
 
 /* Scroll track */
 #story { position: relative; z-index: 5; overflow-x: clip; pointer-events: none; }

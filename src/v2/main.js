@@ -277,18 +277,17 @@ async function boot() {
     document.fonts.load('500 30px "Jost Variable"'),
   ]).catch(() => {});
 
-  const [{ PaintedWorld }, { createIntro }, { Bleed }, THREE, art, noise] = await Promise.all([
-    import('./world.js'), import('../world/intro.js'), import('./bleed.js'), import('three'),
+  const [{ PaintedWorld }, { createIntro }, { createOpening }, { Bleed }, THREE, art, noise] = await Promise.all([
+    import('./world.js'), import('../world/intro.js'), import('./open.js'), import('./bleed.js'), import('three'),
     loadImage(`../v1/art/card${device.preset.smallArt ? '-s' : ''}.webp`), loadImage(`${ART}noise.webp`),
   ]);
 
   world = new PaintedWorld($('#gl'), events, device);
   world.cardArt = art;
   await world.build(onStep);
-  if (mobile) world.easePhone();
+  if (mobile) world.thinShadows();
   if (!withDog) {
     world.dog.root.visible = false;
-    world.thread.mesh.visible = false;
     world.hearts.pop = () => {};
   }
   const noiseTex = new THREE.Texture(noise);
@@ -303,7 +302,7 @@ async function boot() {
   }, { passive: true });
 
   let introDone = false;
-  const intro = createIntro(world, {
+  const intro = (withDog ? createIntro : createOpening)(world, {
     onReveal: () => { $('#intro').classList.add('reading'); },
     onHeroIn: () => {
       $('#intro').classList.add('gone');

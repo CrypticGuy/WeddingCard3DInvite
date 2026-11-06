@@ -19,7 +19,7 @@ export const versions = [
     id: 'v3',
     title: 'The moving storybook, without the pup',
     status: 'draft',
-    summary: 'The same storybook and paintings with no dog anywhere: the envelope opens by itself and the scenes play on their own.',
+    summary: 'The same storybook and paintings with no dog anywhere: one tap turns the sealed envelope over and it opens, and the scenes play on their own.',
     notes: ['Variation of V2', 'No beagle, in 3D or in paint'],
   },
 ];

@@ -19,18 +19,9 @@ export class PaintedWorld extends World {
     this.spin = { az: 0, el: 0, vaz: 0, vel: 0, held: false };
   }
 
-  // Quality can only lower this, never lift it past the phone cap.
-  get pixelRatio() { return this._ratio; }
-  set pixelRatio(v) { this._ratio = Math.min(v, this.ratioCap ?? 1); }
-
-  // Phones: 1.5 device pixels per CSS pixel at most, fewer small plants, and after the
-  // opening the shadow pass (which redraws every triangle) runs one frame in three.
-  easePhone() {
-    this.quality.apply(1, 'phone');
-    this.ratioCap = Math.min(1, 1.5 / Math.min(window.devicePixelRatio || 1, 2));
-    this.pixelRatio = this.ratioCap;
-    this.dpr = 0;
-    this.resize();
+  // Phones: after the opening the shadow pass, which redraws every triangle, runs one
+  // frame in three. Resolution and plant density are src/device.js's job.
+  thinShadows() {
     const map = this.renderer.shadowMap, world = this;
     let wanted = false, tick = 0;
     Object.defineProperty(map, 'needsUpdate', {
