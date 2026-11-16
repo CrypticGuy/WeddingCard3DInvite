@@ -13,7 +13,7 @@
       <header>
         <a class="back" href="../versions/">All versions</a>
         <h1>Share the invite</h1>
-        <p>Pick a size and a design, then save it or send it straight to a chat. Everything is drawn from the invite's own details, so it always matches the site.</p>
+        <p>Pick a size and a design, then share it straight to a chat or download it. Everything is drawn from the invite's own details, so it always matches the site.</p>
       </header>
 
       <fieldset class="formats">
@@ -29,8 +29,15 @@
       <section id="pages" class="pages" hidden aria-label="Pages in the PDF"></section>
 
       <div class="actions">
-        <button id="download" type="button" class="primary">Download</button>
-        <button id="share" type="button" class="secondary" hidden>Share</button>
+        <!-- Share leads where the browser can share files (most phones); Download leads elsewhere. -->
+        <button id="share" type="button" class="primary" hidden>
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Share
+        </button>
+        <button id="download" type="button" class="primary">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20"><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download
+        </button>
         <p id="status" role="status" aria-live="polite"></p>
       </div>
     </main>

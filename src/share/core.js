@@ -1,9 +1,9 @@
 // Shared drawing helpers for the share graphics. Everything is drawn on a 2D canvas in the
 // browser from config.js, so the images always match the site and nothing is committed.
 import { invite } from '../config.js';
-import { dateOf, dateSpan, part, timeRange, timeOfDay } from '../ui/story.js';
+import { dateOf, dateSpan, part, timeOfDay } from '../ui/story.js';
 
-export { invite, dateOf, dateSpan, part, timeRange, timeOfDay };
+export { invite, dateOf, dateSpan, part, timeOfDay };
 
 // Static art for these graphics lives in public/share/ (paper.webp is a copy of V2's card paper).
 export const ART = '../share/';
@@ -105,7 +105,9 @@ export function wrap(g, str, font, max, track = 0, maxLines = 3) {
       const wide = Math.max(measure(g, a, font, track).w, measure(g, b, font, track).w);
       // Never leave a lone ampersand or short joiner at the end of the first line.
       const lonely = /^(&|and|of|the|a)$/i.test(words[k - 1]) ? 1.15 : 1;
-      if (wide <= max && (!best || wide * lonely < best.score)) best = { lines: [a, b], score: wide * lonely };
+      // Addresses read best broken after a comma ("…, Bakoli," / "G.T. Karnal Road…").
+      const comma = str.includes(',') && !/,$/.test(words[k - 1]) ? 1.25 : 1;
+      if (wide <= max && (!best || wide * lonely * comma < best.score)) best = { lines: [a, b], score: wide * lonely * comma };
     }
     if (best) return best.lines;
   }
@@ -139,7 +141,11 @@ export function fitLines(g, str, make, size, max, { maxLines = 1, track = 0, min
 
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 export const inWords = (n) => WORDS[n] ?? String(n);
-export const time = (e) => timeRange(e).replace(/:00/g, '');
+// Times are worked out here rather than with the site's timeRange, so an event with no end
+// time ("6 PM onwards") or an unparseable one never breaks a layout.
+const clock = (d) => part(d, { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s+/g, ' ').replace(':00', '').replace(/\s*([ap])\.?m\.?$/i, (_, x) => ` ${x.toUpperCase()}M`);
+export const endOf = (e) => { const d = e.end ? new Date(e.end) : null; return d && !Number.isNaN(d.getTime()) ? d : null; };
+export const time = (e) => { const end = endOf(e); return end ? `${clock(dateOf(e))} to ${clock(end)}` : `${clock(dateOf(e))} onwards`; };
 export const couple = () => `${invite.couple.first} & ${invite.couple.second}`;
 export const mainEvent = () => invite.events.find((e) => e.main) ?? invite.events[invite.events.length - 1];
 export const year = () => part(dateOf(mainEvent()), { year: 'numeric' });

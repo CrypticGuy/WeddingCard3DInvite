@@ -93,12 +93,22 @@ function prepare(id) {
   const p = Promise.all(pagesOf(f).map((pg) => canvasFor(d, f, pg)))
     .then((canvases) => exportFile(d, f, canvases));
   prepared = { id, p, file: null };
-  p.then((file) => { if (prepared?.id === id) prepared.file = file; updateShare(file); });
+  p.then((file) => { if (prepared?.id === id) { prepared.file = file; updateShare(file); } });
   return prepared;
 }
 
-const canShareFiles = (file) => !!navigator.canShare && navigator.canShare({ files: [file] });
-function updateShare(file) { $('#share').hidden = !canShareFiles(file); }
+// Share is the main action wherever the browser can share files (most phones); elsewhere
+// it is hidden and Download leads. Checked first with a stand-in, then with the real file,
+// since some browsers share images but not PDFs.
+const canShareFiles = (file) => {
+  try { return !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch { return false; }
+};
+function setShare(can) {
+  $('#share').hidden = !can;
+  $('#download').className = can ? 'secondary' : 'primary';
+}
+function updateShare(file) { setShare(canShareFiles(file)); }
+setShare(canShareFiles(new File([new Uint8Array([0xff, 0xd8, 0xff])], 'invite.jpg', { type: 'image/jpeg' })));
 
 $('#formats').addEventListener('change', (e) => {
   state.format = FORMATS.find((f) => f.id === e.target.value);

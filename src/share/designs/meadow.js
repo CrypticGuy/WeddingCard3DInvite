@@ -8,11 +8,12 @@ const INK = '#5a3350', SOFT = '#84607c', GOLD = '#c99a4e', ROSE = '#dc6585';
 const FLOWERS = ['#ffc9d6', '#ffe0a8', '#fff3f6', '#d9c8f5', '#ff9db4', '#ffb84d'];
 const CANOPY = ['#ffc9d6', '#c9efd7', '#d9c8f5', '#ffe0a8', '#a8dcae'];
 
-const garlandWidth = (w, h) => w * (h / w > 1.6 ? 0.92 : h / w > 1.3 ? 0.8 : h / w > 1.2 ? 0.66 : 0.56);
+const garlandWidth = (w, h) => w * (h / w > 1.6 ? 0.76 : h / w > 1.3 ? 0.8 : h / w > 1.2 ? 0.66 : 0.56);
 // The garland's flowers fill roughly this share of its own width, from the card's top.
 const GARLAND = { y0: 48, y1: 432, src: 1024 };
 const garlandBottom = (w, h) => garlandWidth(w, h) * ((GARLAND.y1 - GARLAND.y0) / GARLAND.src) * 0.95;
-const planetHeight = (w, h) => Math.min(h * 0.13, w * 0.2);
+// Shorter on stories, where the event details need the height.
+const planetHeight = (w, h) => Math.min(h * 0.13, w * (h / w > 1.6 ? 0.15 : 0.2));
 
 function cloud(g, x, y, r) {
   g.save();
@@ -125,13 +126,18 @@ function divider(g, x, y, u) {
   g.restore();
 }
 
+// Events with no spray of their own borrow one. The reception has none yet, so it uses the
+// lilac sangeet spray, which no current event shows. Any other id without a spray gets the
+// drawn little planet with the event's initial.
+const SPRAY = { reception: 'sangeet' };
+
 // Event pages: the event's flower spray from V1, or a little planet when there is none.
 function hero(L, e) {
   const { g, u, cx } = L, size = 420 * u;
   return {
     h: size,
     draw: async (y) => {
-      const spray = await tryLoad(`${V1}spray-${e.id}.webp`);
+      const spray = await tryLoad(`${V1}spray-${SPRAY[e.id] ?? e.id}.webp`);
       if (spray) return g.drawImage(spray, cx - size / 2, y, size, size);
       const R = size * 0.3, py = y + size / 2;
       const ground = g.createRadialGradient(cx - R * 0.3, py - R * 0.3, R * 0.1, cx, py, R);

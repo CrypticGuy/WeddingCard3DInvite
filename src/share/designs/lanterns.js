@@ -207,7 +207,7 @@ export const lanterns = {
       divider,
       hero: typeof o.page === 'number' ? hero : undefined,
       // The corner lanterns hang beside the heading, so keep the heading narrow.
-      headerWidth: (L) => L.w * (tall < 1.6 ? 0.58 : 0.62),
+      headerWidth: (L) => L.w * (tall < 1.6 ? 0.58 : 0.56),
       frame: (w, h) => ({ bottom: Math.max(h * (tall > 1.6 ? 0.105 : 0.085), h * 0.075 + 30 * s) }),
     }, o);
   },

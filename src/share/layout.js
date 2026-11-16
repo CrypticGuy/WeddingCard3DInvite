@@ -2,7 +2,7 @@
 // this file decides where the words go. Layout depends only on the canvas shape and on
 // how many events there are (three or four look right), never on which events they are.
 import {
-  FONT, put, measure, fitLines, invite, dateOf, dateSpan, part, timeOfDay, time, couple, inWords,
+  FONT, put, measure, fitLines, wrap, invite, dateOf, dateSpan, part, timeOfDay, time, couple, inWords,
 } from './core.js';
 
 // ── Items: things with a height that draw themselves at a given top ──
@@ -83,9 +83,13 @@ function names(L, maxW, stacked) {
   const glow = T.glow?.(u);
   if (!stacked) {
     const f = fitLines(g, couple(), FONT.script, 150 * u, maxW);
+    L.namesSize = f.size;
     return line(L, couple(), FONT.script(f.size), c.names, { impress: T.impress, glow });
   }
-  const size = Math.min(fitLines(g, first, FONT.script, 200 * u, maxW).size, fitLines(g, second, FONT.script, 200 * u, maxW).size);
+  // On a story the event details need the height, so stacked names start a little smaller.
+  const top = (L.story ? 168 : 200) * u;
+  const size = Math.min(fitLines(g, first, FONT.script, top, maxW).size, fitLines(g, second, FONT.script, top, maxW).size);
+  L.namesSize = size;
   return column([
     line(L, first, FONT.script(size), c.names, { impress: T.impress, glow }),
     gap(14 * u),
@@ -122,44 +126,73 @@ function eventSlots(L, e, width, detail, side = false) {
   const { g, T, u } = L, c = T.colors, im = { impress: T.impress };
   const fit = (str, make, size, opts = {}) => fitLines(g, str, make, size, width, opts);
   const slots = {};
-  const titleSize = { full: 92, cover: 84, compact: 70 }[detail];
+  const titleSize = { full: 92, cover: 84, compact: 70 * L.ev }[detail];
   const t = fit(e.title, FONT.script, titleSize * u, { maxLines: 2, min: 0.6 });
   slots.title = block(L, t.lines, FONT.script(t.size), c.title, 2 * u, { impress: T.impress, glow: T.glow?.(u * 0.6) });
 
   if (detail === 'compact') {
+    // Grid cells grow with L.ev when the page has room to spare.
+    const v = u * L.ev;
     const day = part(dateOf(e), { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
-    slots.date = line(L, day, FONT.sans(fit(day, (s) => FONT.sans(s, 500), 23 * u, { track: 4 * u }).size, 500), c.eyebrow, { track: 4 * u, ...im });
+    slots.date = line(L, day, FONT.sans(fit(day, (s) => FONT.sans(s, 500), 23 * v, { track: 4 * v }).size, 500), c.eyebrow, { track: 4 * v, ...im });
     // Same size in every cell, so one long time or venue does not stand out.
     const all = invite.events;
-    const ts = Math.min(...all.map((x) => fit(time(x), FONT.sans, 25 * u, { min: 0.6 }).size));
+    const ts = Math.min(...all.map((x) => fit(time(x), FONT.sans, 25 * v, { min: 0.6 }).size));
     slots.time = line(L, time(e), FONT.sans(ts), c.ink, im);
-    const vs = Math.min(...all.map((x) => fit(x.venue, FONT.sans, 22 * u, { maxLines: 2, min: 0.8, single: 0.72 }).size));
-    const v = fit(e.venue, FONT.sans, vs, { maxLines: 2, min: 1 });
-    slots.venue = block(L, v.lines, FONT.sans(v.size), c.soft, 6 * u, im);
+    // Long venues (a name and an address in one) may take three lines rather than shrink.
+    const vs = Math.min(...all.map((x) => fit(x.venue, FONT.sans, 23 * v, { maxLines: 3, min: 0.8, single: 0.72 }).size));
+    slots.venue = block(L, wrap(g, e.venue, FONT.sans(vs), width, 0, 3), FONT.sans(vs), c.soft, 6 * v, im);
     return slots;
-  }
-  if (detail === 'full' && !side) {
-    const eb = weekdayTime(e).toUpperCase();
-    slots.eyebrow = line(L, eb, FONT.sans(20 * u, 500), c.eyebrow, { track: 6 * u, ...im });
   }
   const when = `${longDate(e)}  ·  ${time(e)}`;
   slots.date = line(L, when, FONT.sans(fit(when, FONT.sans, 28 * u).size), c.ink, im);
   const v = fit(e.venue, FONT.sans, 26 * u, { maxLines: 2, min: 0.8 });
   slots.venue = block(L, v.lines, FONT.sans(v.size), c.soft, 6 * u, im);
-  if (detail === 'full' && e.dress) {
+  return slots;
+}
+
+// Status and story images (one event per row, lots of height): big type, read at phone size.
+// Sizes use L.ev, the event scale, which starts well above the header's and shrinks to fit.
+function storySlots(L, e, width) {
+  const { g, T, u, ev } = L, c = T.colors, im = { impress: T.impress }, v = u * ev;
+  const fit = (str, make, size, opts = {}) => fitLines(g, str, make, size, width, opts);
+  // Every event's lines share one size per slot, so one long venue does not stand out.
+  const all = invite.events;
+  const same = (get, make, size, opts) => Math.min(...all.map((x) => (get(x) ? fit(get(x), make, size, opts).size : size)));
+  const slots = {};
+  // Event titles stay a step below the couple's names.
+  const ts = same((x) => x.title, FONT.script, Math.min(124 * v, (L.namesSize ?? Infinity) * 0.8), { maxLines: 2, min: 0.6 });
+  const t = fit(e.title, FONT.script, ts, { maxLines: 2, min: 0.6 });
+  slots.title = block(L, t.lines, FONT.script(t.size), c.title, 0, { impress: T.impress, glow: T.glow?.(v * 0.6) });
+  const day = (x) => part(dateOf(x), { weekday: 'long', day: 'numeric', month: 'long' });
+  const ds = same(day, (z) => FONT.serif(z, 400), 50 * v);
+  slots.date = line(L, day(e), FONT.serif(ds, 400), c.ink, im);
+  const tm = (x) => time(x).toUpperCase();
+  const tz = same(tm, (z) => FONT.sans(z, 500), 31 * v, { track: 5 * v });
+  slots.time = line(L, tm(e), FONT.sans(tz, 500), c.eyebrow, { track: 5 * v, ...im });
+  const vs = same((x) => x.venue, (z) => FONT.sans(z, 500), 38 * v, { maxLines: 2, min: 0.7, single: 0.9 });
+  const vn = { lines: wrap(g, e.venue, FONT.sans(vs, 500), width, 0, 2) };
+  slots.venue = block(L, vn.lines, FONT.sans(vs, 500), c.ink, 8 * v, im);
+  if (e.address) {
+    const as = same((x) => x.address, FONT.sans, 31 * v, { maxLines: 2, min: 0.7, single: 0.9 });
+    const a = { size: as, lines: wrap(g, e.address, FONT.sans(as), width, 0, 2) };
+    slots.address = block(L, a.lines, FONT.sans(a.size), c.soft, 6 * v, im);
+  }
+  if (e.dress) {
     const d = `Dress: ${e.dress}`;
-    slots.dress = line(L, d, FONT.italic(fit(d, FONT.italic, 27 * u).size), c.soft, im);
+    slots.dress = line(L, d, FONT.italic(fit(d, FONT.italic, 32 * v).size), c.soft, im);
   }
   return slots;
 }
 
-const ORDER = ['art', 'eyebrow', 'title', 'date', 'time', 'venue', 'dress'];
-const AFTER = { art: 16, eyebrow: 12, title: 12, date: 8, time: 8, venue: 8, dress: 0 };
+const ORDER = ['art', 'eyebrow', 'title', 'date', 'time', 'venue', 'address', 'dress'];
+const AFTER = { art: 16, eyebrow: 12, title: 12, date: 8, time: 8, venue: 8, address: 8, dress: 0 };
+const STORY_AFTER = { title: 14, date: 10, time: 22, venue: 8, address: 14, dress: 0 };
 
 // Cells in a grid: every row shares slot heights so titles and dates line up across.
 function grid(L, { width, cols, detail }) {
   const { T, u } = L, n = invite.events.length;
-  const gutter = (cols > 2 ? 26 : 50) * u, cw = (width - gutter * (cols - 1)) / cols;
+  const gutter = (cols > 2 ? 40 : 50) * u, cw = (width - gutter * (cols - 1)) / cols;
   const art = T.art ? Math.min(cw * 0.86, (cols > 2 ? 230 : 300) * u) : 0;
   const cells = invite.events.map((e, i) => {
     const s = eventSlots(L, e, cw, detail);
@@ -199,15 +232,16 @@ function rows(L, { width, detail, side }) {
   const items = [];
   const art = side && T.art ? (detail === 'cover' ? 190 : 210) * u : 0;
   const textW = art ? width - art - 40 * u : width;
+  const story = detail === 'full' && !art, after = story ? STORY_AFTER : AFTER, au = story ? u * L.ev : u;
   const cells = invite.events.map((e, i) => {
-    const s = eventSlots(L, e, textW, detail, !!art);
+    const s = story ? storySlots(L, e, textW) : eventSlots(L, e, textW, detail, !!art);
     const parts = [];
-    for (const k of ORDER) if (s[k]) { if (parts.length) parts.push(gap(AFTER[parts.at(-1).key] * u)); parts.push(Object.assign(s[k], { key: k })); }
+    for (const k of ORDER) if (s[k]) { if (parts.length) parts.push(gap(after[parts.at(-1).key] * au)); parts.push(Object.assign(s[k], { key: k })); }
     return { col: column(parts), e, i };
   });
   if (!art) {
     cells.forEach(({ col }, i) => {
-      if (i) items.push(gap(26 * u, 1, 46 * u), divider(L), gap(26 * u, 1, 46 * u));
+      if (i) items.push(gap(26 * au, 1, (story ? 70 : 46) * au), divider(L), gap(26 * au, 1, (story ? 70 : 46) * au));
       items.push({ h: col.h, draw: (y) => col.draw(y, L.cx, 'center') });
     });
     return items;
@@ -247,9 +281,11 @@ function summary(L) {
   const width = box.right - box.left;
   const headW = Math.min(width, T.headerWidth ? T.headerWidth(L) : width);
   const detail = cols === 1 ? (L.page === 'cover' ? 'cover' : 'full') : 'compact';
+  // The header first: event titles are sized against the names.
+  const head = header(L, { maxW: headW, stacked: L.stacked ?? tall >= 1.6, tight: tall < 1.3 });
   const ev = cols === 1 ? rows(L, { width, detail, side: true }) : grid(L, { width, cols, detail });
   return [
-    ...header(L, { maxW: headW, stacked: tall >= 1.6, tight: tall < 1.3 }),
+    ...head,
     gap(52 * u, 2, 140 * u),
     ...ev,
     gap(46 * u, 2, 140 * u),
@@ -289,8 +325,12 @@ function eventPage(L) {
     block(L, v.lines, FONT.sans(v.size, 500), c.ink, 10 * u, im),
   );
   if (e.address) {
-    const a = fitLines(g, e.address, FONT.sans, 28 * u, width, { maxLines: 3, min: 0.8 });
+    const a = fitLines(g, e.address, FONT.sans, 28 * u, width, { maxLines: 3, min: 0.8, single: 0.95 });
     items.push(gap(12 * u), block(L, a.lines, FONT.sans(a.size), c.soft, 8 * u, im));
+  }
+  if (e.near) {
+    const n2 = fitLines(g, e.near, FONT.italic, 28 * u, width, { maxLines: 2, min: 0.8 });
+    items.push(gap(8 * u), block(L, n2.lines, FONT.italic(n2.size), c.soft, 6 * u, im));
   }
   if (e.dress) {
     items.push(gap(40 * u, 1, 80 * u), eyebrow('Dress code', 18), gap(14 * u),
@@ -307,19 +347,42 @@ export function frame(w, h) {
   return { top: w * 0.085, bottom: w * 0.085, side: w * 0.085 };
 }
 
+const STORY_EV = 1.22, STORY_MIN_K = 0.9;
+const GRID_EV = [1.4, 1.28, 1.16, 1], GRID_MIN_K = 1.1;
+
 // Typesets a page. page: 'all' (everything on one image), 'cover', or an event index.
 export async function typeset(g, T, { w, h, page = 'all' }) {
   const s = w / 1080;
   const f = { ...frame(w, h), ...(T.frame?.(w, h, page) ?? {}) };
   const box = { left: f.side, right: w - f.side, top: f.top, bottom: h - f.bottom };
-  let L;
-  let items = [];
+  const story = page === 'all' && h / w > 1.6;
   // Start a little large and shrink until everything fits; spare room goes to the gaps.
-  for (let k = 1.25, i = 0; i < 40; i++, k *= 0.97) {
-    L = { g, w, h, s, k, u: s * k, cx: w / 2, T, page, box };
-    items = typeof page === 'number' ? eventPage(L) : summary(L);
-    if (need(items) <= box.bottom - box.top) break;
-  }
+  // ev scales the event details against the header: stories always run them larger.
+  const fit = (ev, stacked) => {
+    let L, items;
+    for (let k = 1.25, i = 0; i < 40; i++, k *= 0.97) {
+      L = { g, w, h, s, k, u: s * k, ev, stacked, story, cx: w / 2, T, page, box };
+      items = typeof page === 'number' ? eventPage(L) : summary(L);
+      if (need(items) <= box.bottom - box.top) break;
+    }
+    return { L, items };
+  };
+  let L, items;
+  if (story) {
+    // Stories stack the names when there is room; with several events the names go on one
+    // line instead, so the event details can stay large.
+    ({ L, items } = fit(STORY_EV, undefined));
+    if (L.k < STORY_MIN_K) {
+      const one = fit(STORY_EV, false);
+      if (one.L.k > L.k) ({ L, items } = one);
+    }
+  } else if (page === 'all') {
+    // Portrait and square grids: the largest event type that keeps the header full size.
+    for (const ev of GRID_EV) {
+      ({ L, items } = fit(ev));
+      if (L.k >= GRID_MIN_K) break;
+    }
+  } else ({ L, items } = fit(1));
   await place(items, box.top, box.bottom);
   return L;
 }

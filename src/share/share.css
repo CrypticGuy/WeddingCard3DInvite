@@ -65,8 +65,11 @@ legend { padding: 0; margin-bottom: 10px; font-size: 13px; letter-spacing: .14em
   padding: 14px 0 max(14px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--bg) 30%);
 }
 .actions button {
-  font: 500 17px/1 var(--body); padding: 13px 28px; border-radius: 99px; cursor: pointer; border: 1px solid var(--accent);
+  display: inline-flex; align-items: center; gap: 9px;
+  font: 500 17px/1 var(--body); padding: 13px 26px; border-radius: 99px; cursor: pointer; border: 1px solid var(--accent);
 }
+.actions button[hidden] { display: none; }
+.actions svg { flex: none; margin-left: -4px; }
 .primary { background: var(--accent); color: #fff; }
 .secondary { background: var(--paper); color: var(--accent); }
 .actions button:disabled { opacity: .55; cursor: progress; }
