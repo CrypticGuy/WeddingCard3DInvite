@@ -3,7 +3,7 @@ import { rng, soft, vertexSoft, Bag, xf, lerp } from './kit.js';
 import { sdfGeometry, smin, sphere } from './sdf.js';
 import { R } from './planet.js';
 
-function petalGeo() {
+export function petalGeo() {
   // A cupped teardrop built from a small grid.
   const nx = 4, ny = 5, pos = [], idx = [];
   for (let j = 0; j <= ny; j++)

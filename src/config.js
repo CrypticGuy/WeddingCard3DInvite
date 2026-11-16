@@ -19,63 +19,58 @@ export const invite = {
   cardOutro: 'are getting married',
 
   // Hero line under the names, and the closing note
-  heroLine: 'Four celebrations on one tiny world. Come walk with us.',
+  heroLine: 'Three celebrations over two February evenings in Delhi. Come walk with us.',
   closingTitle: 'See you there',
-  closingNote: 'Bring your dancing shoes. The pup is bringing the thread.',
+  closingNote: 'Bring your dancing shoes. We will save you a spot on the floor.',
 
   // The hint at the foot of the opening screen: one line for mice, one for touch screens.
   scrollCue: { mouse: 'Scroll to see the events', touch: 'Swipe up to see the events' },
 
-  // Countdown runs to the event flagged `main: true`.
-  // The 3D sky follows each event's start time (morning blue to night indigo). To pick a
-  // sky by hand, add `sky: 19.5` (an hour) or `sky: 'dusk'` (morning, afternoon, golden,
-  // sunset, dusk, night) to an event.
-  // PLACEHOLDER DATES AND VENUES: replace with the real ones.
+  // One entry per celebration, in order. The `id` picks the 3D scene, colours and card
+  // art (mehendi, wedding, reception), so keep those three as they are.
+  //   start     when it begins, with the venue's offset (+05:30 is India)
+  //   end       optional. Without it the card says "6:00 PM onwards", and calendars get
+  //             a four hour slot
+  //   tagline   the line under the title; dress is the "Wear" line
+  //   venue, address, near   shown on the card; near is an optional landmark
+  //   maps      optional exact Google Maps link (a dropped pin). Empty searches Google
+  //             Maps for "venue, address"
+  //   sky       optional: the 3D sky follows the start time (morning blue to night
+  //             indigo). Pick one by hand as an hour (sky: 19.5) or a name: morning,
+  //             afternoon, golden, sunset, dusk, night
+  // The countdown runs to the event flagged `main: true`.
   events: [
     {
       id: 'mehendi',
-      title: 'Mehendi',
-      tagline: 'Henna, swings and garden songs',
-      start: '2027-02-12T16:00:00+05:30',
-      end: '2027-02-12T20:00:00+05:30',
-      venue: 'Venue to be announced',
-      address: '',
-      mapUrl: '',
-      dress: 'Garden greens',
-    },
-    {
-      id: 'haldi',
-      title: 'Haldi',
-      tagline: 'Turmeric, marigolds and laughter',
-      start: '2027-02-13T10:30:00+05:30',
-      end: '2027-02-13T13:30:00+05:30',
-      venue: 'Venue to be announced',
-      address: '',
-      mapUrl: '',
-      dress: 'Sunshine yellows',
-    },
-    {
-      id: 'sangeet',
-      title: 'Sangeet',
-      tagline: 'A night of music and lanterns',
-      start: '2027-02-13T19:30:00+05:30',
-      end: '2027-02-13T23:30:00+05:30',
-      venue: 'Venue to be announced',
-      address: '',
-      mapUrl: '',
-      dress: 'Dusk lilacs and sparkle',
+      title: 'Mehendi & Sangeet',
+      tagline: 'Henna, music and dancing',
+      start: '2027-02-09T18:00:00+05:30',
+      venue: 'Vardaan by Sandoz',
+      address: 'Dilli Haat, Netaji Subhash Place, Pitampura, Delhi 110034',
+      near: 'Near Guru Gobind Singh College',
+      maps: '',
+      dress: 'Bright and festive',
     },
     {
       id: 'wedding',
       title: 'Wedding',
-      tagline: 'Seven steps around the sacred fire',
-      start: '2027-02-14T18:00:00+05:30',
-      end: '2027-02-14T23:00:00+05:30',
-      venue: 'Venue to be announced',
-      address: '',
-      mapUrl: '',
-      dress: 'Blush and gold',
+      tagline: 'Pheras under the evening sky',
+      start: '2027-02-10T17:30:00+05:30',
+      venue: 'City Park Green Resort',
+      address: 'Palla Bhaktawar Pur Road, Bakoli, G.T. Karnal Road (NH-1), New Delhi 110039',
+      maps: '',
+      dress: 'Traditional finery',
       main: true,
+    },
+    {
+      id: 'reception',
+      title: 'Reception',
+      tagline: 'Dinner and celebrations',
+      start: '2027-02-10T20:00:00+05:30',
+      venue: 'City Park Green Resort',
+      address: 'Palla Bhaktawar Pur Road, Bakoli, G.T. Karnal Road (NH-1), New Delhi 110039',
+      maps: '',
+      dress: 'Evening glamour',
     },
   ],
 };

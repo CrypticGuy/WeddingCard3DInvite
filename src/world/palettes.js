@@ -64,8 +64,7 @@ export const PALETTES = {
     // One sky per event, as first designed. Events not named here follow their start time.
     events: {
       mehendi: { top: '#9fdccf', mid: '#cdeed0', bot: '#fff3d2', sun: '#fff4da', sunI: 1.5, hemiSky: '#effff2', hemiGround: '#d7eccd', hemiI: 1.3, rim: '#f0fff2' },
-      haldi: { top: '#ffcf74', mid: '#ffdf9c', bot: '#fff1c4', sun: '#ffeab8', sunI: 1.6, hemiSky: '#fff6d9', hemiGround: '#f4edc0', hemiI: 1.35, rim: '#fff4cc' },
-      sangeet: { top: '#4e4b9c', mid: '#a583d4', bot: '#f7a8c4', sun: '#e8dcff', sunI: 1.15, hemiSky: '#d4ccf6', hemiGround: '#c2a8e0', hemiI: 1.45, rim: '#e0c8ff', night: 1 },
+      reception: { top: '#4e4b9c', mid: '#a583d4', bot: '#f7a8c4', sun: '#e8dcff', sunI: 1.15, hemiSky: '#d4ccf6', hemiGround: '#c2a8e0', hemiI: 1.45, rim: '#e0c8ff', night: 1 },
       wedding: { top: '#f38fa8', mid: '#fbbfb4', bot: '#ffe2b0', sun: '#ffdcb0', sunI: 1.55, hemiSky: '#ffe6e2', hemiGround: '#fbdccb', hemiI: 1.35, rim: '#ffe4d6', night: 0.25 },
     },
   },

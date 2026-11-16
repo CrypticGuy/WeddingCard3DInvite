@@ -64,3 +64,35 @@ export function parasol(bag, x, z, h, rad, c1, c2, tilt = 0) {
 
 export const fireMat = () => new THREE.MeshBasicMaterial({ color: new THREE.Color(1.9, 0.95, 0.42) });
 
+
+// ── Moving extras ───────────────────────────────────────────
+// Each event's little animations (swaying torans, petals, fairy lights, sparkles) are
+// instanced meshes: one draw call per kind, matrices rewritten only while that event is
+// on screen (world.js pauses the others). ctx.fx (src/device.js) thins them per tier.
+
+// Soft pastels every venue draws from, so the three read as one family.
+export const PASTEL = {
+  pink: '#ffd3de', blush: '#ffc4d2', peach: '#ffd9c2', apricot: '#ffcfae', mint: '#c9eedb', sage: '#b9dcb8',
+  lavender: '#e4dbf8', lilac: '#d6c9f4', butter: '#fff0b8', cream: '#fff6e6', powder: '#d3e4fa', sky: '#c3d8f6',
+  gold: '#f4dca2', rope: '#ecd3a3',
+};
+// Marigolds, softened a step toward peach so they sit with the pastels.
+export const MARIGOLD = ['#ffcf7a', '#ffdd9c', '#ffc29a', '#fff1cf'];
+
+export const fxCount = (n, ctx, min = 0) => Math.max(min, Math.round(n * (ctx?.fx ?? 1)));
+
+export function instanced(geo, mat, n) {
+  const im = new THREE.InstancedMesh(geo, mat, Math.max(1, n));
+  im.count = n;
+  im.frustumCulled = false;   // they move, so a bounding sphere from load time would lie
+  im.castShadow = false;
+  im.receiveShadow = false;
+  return im;
+}
+
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler();
+const _p = new THREE.Vector3(), _s = new THREE.Vector3();
+export function pose(im, i, x, y, z, rx = 0, ry = 0, rz = 0, s = 1) {
+  _q.setFromEuler(_e.set(rx, ry, rz));
+  im.setMatrixAt(i, _m.compose(_p.set(x, y, z), _q, typeof s === 'number' ? _s.setScalar(s) : _s.set(...s)));
+}

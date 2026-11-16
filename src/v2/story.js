@@ -2,17 +2,18 @@
 // from src/ui/story.js; everything guests read comes from src/config.js.
 import { invite } from '../config.js';
 import { ART } from './tier.js';
-import { cueButton, dateOf, dateSpan, esc, googleLink, letters, part, timeOfDay, timeRange } from '../ui/story.js';
+import { cueButton, dateOf, dateSpan, esc, googleLink, letters, mapsLink, part, timeOfDay, timeRange } from '../ui/story.js';
+import { sceneArt } from './scenes.js';
 
 function eventCard(e, i) {
   const d = dateOf(e);
-  const map = e.mapUrl ? `<a class="btn ghost" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Open map</a>` : '';
+  const map = `<a class="btn ghost" href="${esc(mapsLink(e))}" target="_blank" rel="noopener">Get directions</a>`;
   const address = e.address ? `<span class="sub">${esc(e.address)}</span>` : '';
   return `
   <section class="chapter event" id="${esc(e.id)}" data-index="${i}" data-theme-event="${esc(e.id)}" aria-label="${esc(e.title)}">
     <div class="pin">
       <article class="card">
-        <img class="sprig" src="${ART}${esc(e.id)}/sprig.webp" alt="" width="300" height="300" loading="lazy">
+        <img class="sprig" src="${ART}${esc(sceneArt(e.id))}/sprig.webp" alt="" width="300" height="300" loading="lazy">
         <p class="eyebrow">${part(d, { weekday: 'long' })} ${timeOfDay(d)}</p>
         <h2>${esc(e.title)}</h2>
         <p class="tag">${esc(e.tagline)}</p>

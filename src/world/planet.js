@@ -5,13 +5,15 @@ import { sdfGeometry, smin, sphere } from './sdf.js';
 
 export const R = 9;
 
-// Every stop gets its own meadow: ground colour, grass tint, flower palette.
+// Every stop gets its own meadow: ground colour, grass tint, flower palette and tree
+// blossom, by event id (src/config.js). An id not listed here gets the start meadow.
 export const ZONES = {
-  start: { ground: '#bfe8c4', grass: '#a8e0b0', flowers: ['#ffc9d6', '#ffe0a8', '#fff3f6', '#d9c8f5'] },
-  mehendi: { ground: '#a8dcae', grass: '#8fd4a0', flowers: ['#fff6e8', '#ffd0dc', '#c9efd7', '#f7e3a1'] },
-  haldi: { ground: '#eaeb9f', grass: '#dfe48a', flowers: ['#ffb84d', '#ffd05c', '#ff9f4a', '#fff0b0'] },
-  sangeet: { ground: '#c9c4ef', grass: '#b5b1ea', flowers: ['#e9c6ff', '#b9a4f6', '#ffc4e6', '#a7d3ff'] },
-  wedding: { ground: '#fbcdd5', grass: '#f8bcc8', flowers: ['#ff9db4', '#fff0ee', '#ffc9a8', '#f7d98c'] },
+  start: { ground: '#bfe8c4', grass: '#a8e0b0', flowers: ['#ffc9d6', '#ffe0a8', '#fff3f6', '#d9c8f5'], trees: ['#ffc4d6', '#ffd9e4'] },
+  // Mehendi & Sangeet: henna greens with marigold and lilac blooms
+  mehendi: { ground: '#addfb0', grass: '#94d6a3', flowers: ['#fff6e8', '#ffd0dc', '#ffd98a', '#e3d3fb'], trees: ['#b8e6c4', '#d7f2c8', '#fff0b0'] },
+  wedding: { ground: '#fbcdd5', grass: '#f8bcc8', flowers: ['#ff9db4', '#fff0ee', '#ffc9a8', '#f7d98c'], trees: ['#ffb3c7', '#ffd0d8'] },
+  // Reception: powder blue and lavender for the night
+  reception: { ground: '#cad6f3', grass: '#b8c8ef', flowers: ['#e3ecff', '#cdbdf7', '#fff3c8', '#ffd6ea'], trees: ['#c6d4fb', '#dccff8'] },
 };
 const PATH = new THREE.Color('#fff0dc');
 const PATH_EDGE = new THREE.Color('#f7dcc2');
@@ -389,11 +391,7 @@ export function createFlora(terrain, stops, blocked, p) {
   // Trees
   const canopies = [canopyGeo(3, p.canopyCell), canopyGeo(11, p.canopyCell)];
   const treeC = (dd, c) => {
-    const z = terrain.nearestZone(dd).zone;
-    const pal = {
-      start: ['#ffc4d6', '#ffd9e4'], mehendi: ['#b8e6c4', '#d7f2c8'], haldi: ['#ffd27a', '#ffe39b'],
-      sangeet: ['#cdb4f7', '#b9c4fa'], wedding: ['#ffb3c7', '#ffd0d8'],
-    }[z];
+    const pal = (ZONES[terrain.nearestZone(dd).zone] ?? ZONES.start).trees;
     c.set(pal[(r() * pal.length) | 0]);
   };
   const treeSpots = [];

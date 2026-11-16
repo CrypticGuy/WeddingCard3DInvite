@@ -9,30 +9,32 @@
 
 export const TIERS = ['lite', 'medium', 'high', 'full'];
 
+// fx is the share of each event's moving extras that gets drawn (swaying torans, petals,
+// fairy lights, sparkles): 1 is all of them, 0 none.
 export const PRESETS = {
   lite: {
     ground: 44, grass: 600, blossom: 160, peony: 60, tulip: 50, lavender: 0, trees: 14, patches: 36,
     clouds: 3, balloons: 1, petals: 24, shadows: false, shadowMap: 512, post: false, dprCap: 1.35,
     lambert: true, canopyCell: 0.2, sdf: 1.6, smallBall: 0.13, pointLight: false, frameMs: 30,
-    smallArt: true, lowMusic: true, setWindow: 1,
+    smallArt: true, lowMusic: true, setWindow: 1, fx: 0.4,
   },
   medium: {
     ground: 56, grass: 1500, blossom: 420, peony: 150, tulip: 130, lavender: 0, trees: 26, patches: 60,
     clouds: 6, balloons: 2, petals: 50, shadows: true, shadowMap: 1024, post: false, dprCap: 1.6,
     lambert: true, canopyCell: 0.17, sdf: 1.25, smallBall: 0.09, pointLight: false, frameMs: 0,
-    smallArt: true, lowMusic: true, setWindow: 9,
+    smallArt: true, lowMusic: true, setWindow: 9, fx: 0.7,
   },
   high: {
     ground: 64, grass: 2800, blossom: 800, peony: 300, tulip: 260, lavender: 260, trees: 40, patches: 90,
     clouds: 9, balloons: 4, petals: 90, shadows: true, shadowMap: 1024, post: false, dprCap: 2,
     lambert: false, canopyCell: 0.15, sdf: 1, smallBall: 0.075, pointLight: false, frameMs: 0,
-    smallArt: false, lowMusic: false, setWindow: 9,
+    smallArt: false, lowMusic: false, setWindow: 9, fx: 1,
   },
   full: {
     ground: 96, grass: 4400, blossom: 1300, peony: 460, tulip: 400, lavender: 420, trees: 60, patches: 130,
     clouds: 14, balloons: 4, petals: 300, shadows: true, shadowMap: 2048, post: true, dprCap: 2,
     lambert: false, canopyCell: 0.12, sdf: 1, smallBall: 0.075, pointLight: true, frameMs: 0,
-    smallArt: false, lowMusic: false, setWindow: 9,
+    smallArt: false, lowMusic: false, setWindow: 9, fx: 1,
   },
 };
 

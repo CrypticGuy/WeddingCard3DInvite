@@ -3,7 +3,7 @@
 // the cheapest thing an old phone can do. Layout is computed once per resize and
 // shared with snapshot(), so the frozen frame the paint-bleed uses matches exactly.
 import { clamp } from '../world/kit.js';
-import { SCENES } from './scenes.js';
+import { SCENES, sceneArt } from './scenes.js';
 import { ART } from './tier.js';
 
 // Where a scene rests, as a share of its own scroll length.
@@ -47,8 +47,8 @@ export class Stage {
   }
 
   build(e, i) {
-    const def = SCENES[e.id];
-    const small = `${ART}${e.id}/`;
+    const def = SCENES[sceneArt(e.id)];
+    const small = `${ART}${sceneArt(e.id)}/`;
     const base = this.lite ? `${small}lite/` : small;
     const box = el('div', 'scene', this.root);
     box.dataset.scene = e.id;

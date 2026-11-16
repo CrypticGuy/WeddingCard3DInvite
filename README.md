@@ -1,6 +1,6 @@
 # Parushi & Rishabh: wedding invite
 
-An animated 3D invitation. A beagle tugs the thread on a sealed envelope, the card opens to reveal the names, and the camera pulls back to show the meadow is a tiny planet. Scrolling rolls the planet under the pup from one event to the next.
+An animated 3D invitation. A beagle tugs the thread on a sealed envelope, the card opens to reveal the names, and the camera pulls back to show the meadow is a tiny planet. Scrolling rolls the planet under the beagle from one event to the next: Mehendi & Sangeet, the Wedding and the Reception. The dog changes outfit for each one.
 
 Built with Three.js, GSAP and Vite. Every model is generated in code, so there are no 3D files to download.
 
@@ -10,13 +10,20 @@ The site root sends guests straight to the V1 invite (`/v1/`). The review page l
 
 `v2/` is the watercolour storybook: V1's opening and finale around four painted scenes. Its code is in `src/v2/` and its art in `public/v2/art/`. `v3/` is the same storybook without the dog (`data-variant="nodog"`) and shares V2's code and art. How the art was made is in [`public/v2/art/CREDITS.md`](public/v2/art/CREDITS.md); to remake it, see the scripts in `scripts/v2-art/` (Python with Pillow, numpy, scipy and opencv-python-headless).
 
-Every version shows a "Next" arrow and a save button. The saved image and PDF are drawn in the browser by [`src/ui/poster.js`](src/ui/poster.js) from the same config, so they always match the site.
+Every version shows a "Next" arrow and a share button. On phones that can share files it opens the share sheet with the invite image and the link; where only links can be shared, just the link; elsewhere a menu saves the image or a PDF. The image and PDF are drawn in the browser by [`src/ui/poster.js`](src/ui/poster.js) from the same config (using V1's card sprays), so they always match the site.
 
 **Share graphics.** `/share/` makes ready-to-send images of the invite in three designs (Letterpress, Evening lanterns, Tiny planet) and four sizes: 1080×1920 for WhatsApp status and stories, 1080×1350 portrait, 1080×1080 square, and an A4 PDF with a cover and one page per event. Pick one, then Download, or Share straight to an app on phones that support it. Everything is drawn in the browser from `src/config.js`, and the layout adapts to the number of events. Code is in `src/share/` (one file per design in `src/share/designs/`).
 
 ## Edit the invite
 
-All wording, dates and venues live in [`src/config.js`](src/config.js). Dates shown there are placeholders until replaced.
+All wording, dates and venues live in [`src/config.js`](src/config.js); the comment above `events` lists every field. In short:
+
+- `start` is the time it begins, with the venue's offset (`+05:30`). `end` is optional: without it the card says "6:00 PM onwards" and calendar entries get a four hour slot.
+- `venue`, `address` and an optional landmark `near` show on the card. The venue name and the "Get directions" button open Google Maps, searching for "venue, address". To point at an exact pin instead, paste its link into `maps`.
+- `tagline` and `dress` are the line under the title and the "Wear" line.
+- The `id` (`mehendi`, `wedding`, `reception`) picks the 3D scene, meadow and card colours, card art and the dog's outfit, so keep those. A new id still works, with the start meadow and no diorama.
+
+The dioramas are in `src/world/props/` (one file per event id, listed in `index.js`), sharing the pastel colours in `common.js`. Their moving extras (torans, notes, diya flames, petals, fairy lights, sparkles) are thinned per device tier by `fx` in `src/device.js`, only move while their event is on screen, and hold still for visitors who prefer reduced motion.
 
 Music lives in `public/v1/music/` and is set by `music` in the config. Licences and required credits are in [`public/v1/music/CREDITS.md`](public/v1/music/CREDITS.md).
 

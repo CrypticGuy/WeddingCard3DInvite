@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { shared, clamp, lerp, sstep, damp, rng, soft, profile } from './kit.js';
+import { shared, clamp, lerp, sstep, damp, rng, soft, profile, venueMat } from './kit.js';
 import { R, ZONES, createTerrain, createGround, createFlora, createWater, dirAt } from './planet.js';
 import { Quality } from './quality.js';
 import { loaders, RADIUS, place } from './props/index.js';
@@ -64,6 +64,7 @@ export class World {
     this.pixelRatio = 1;
     this.frames = 0;
     this.lastShadowTheta = 1e9;
+    this.reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.paletteName = DEFAULT_PALETTE;   // set before build() to start on another
     this.zoom = 0;                        // a ?zoom= override for the globe shots, 0 for none
   }
@@ -94,6 +95,7 @@ export class World {
     this.footprints = [];
     this.bulbMat = new THREE.MeshBasicMaterial({ vertexColors: true });
     this.lanternMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 0.95, 0.72) });
+    this.venueMat = venueMat();   // every diorama shares it
     for (const stop of this.stops) {
       if (RADIUS[stop.id]) this.footprints.push({ d: dirAt(stop.phi + 0.75 / R, -2.05), r: RADIUS[stop.id] });
     }
@@ -227,7 +229,10 @@ export class World {
     await new Promise((r) => (window.requestIdleCallback ? requestIdleCallback(r, { timeout: 400 }) : setTimeout(r, 30)));
     const stop = this.stops.find((s) => s.id === id);
     const seed = rng(31 + stop.phi * 100);
-    const set = id === 'sangeet' ? make(seed, this.bulbMat, this.lanternMat) : make(seed, this.p.pointLight);
+    const set = make(seed, { mat: this.venueMat, bulbMat: this.bulbMat, lanternMat: this.lanternMat, q: this.p.pointLight, fx: this.p.fx ?? 1 });
+    set.chapter = this.chapters.indexOf(id);
+    // Reduced motion: everything holds one pleasant pose instead of moving.
+    if (this.reduced) { for (const f of set.ticks) f(1.3, 0); set.ticks = []; }
     place(set.root, this.terrain, stop.phi, -2.05, 0.75);
     this.roll.add(set.root);
     this.sets[id] = set;
@@ -239,13 +244,13 @@ export class World {
     const set = this.sets[id];
     if (!set || set === 'loading') return;
     this.roll.remove(set.root);
-    set.root.traverse((o) => o.geometry?.dispose());
+    set.root.traverse((o) => { o.geometry?.dispose(); if (o.isInstancedMesh) o.dispose(); });
     delete this.sets[id];
     this.refreshTicks();
   }
 
   refreshTicks() {
-    this.ticks = Object.values(this.sets).flatMap((s) => s.ticks ?? []);
+    this.ticks = Object.values(this.sets).filter((s) => s.ticks?.length);
   }
 
   // Keep the nearby dioramas ready, and on the lowest tier release the far ones.
@@ -296,6 +301,7 @@ export class World {
     this.sun.color.copy(m.sun); this.sun.intensity = m.sunI;
     this.hemi.color.copy(m.hemiSky); this.hemi.groundColor.copy(m.hemiGround); this.hemi.intensity = m.hemiI;
     shared.uRim.value.copy(m.rim);
+    shared.uSelfLit.value = 0.04 + 0.2 * m.night;
     this.stars.material.opacity = m.night;
     this.water.material.uniforms.uSky.value.copy(m.mid);
     this.water.material.uniforms.uLight.value = 1 - m.night * 0.3;
@@ -466,6 +472,9 @@ export class World {
     dog.tilt = damp(dog.tilt, moving ? 0 : Math.sin(t * 0.45) * 0.14, 3, dt);
     dog.crouch = damp(dog.crouch, this.back * 0.42, 6, dt);
     dog.lean = damp(dog.lean, 0, 6, dt);
+    // Dressed for whichever event is on screen; plain collar at the start and the end.
+    const here = this.chapters[clamp(Math.round(this.s), 0, this.chapters.length - 1)];
+    dog.setOutfit(here, this.reduced);
     // At a stop the pup stands just left of the diorama, kept upright.
     dog.placeOnRing(R, (-0.75 / R) * (1 - (this.wide ?? 0)), this.heading);
     dog.root.rotation.z = 0;
@@ -513,7 +522,8 @@ export class World {
     this.applyMood();
     this.updateDog(dt, t);
     if (this.frames % 20 === 0) this.manageSets();
-    for (const f of this.ticks) f(t, dt);
+    // Only the event on screen (and the one it is flying to) moves; the rest hold still.
+    for (const set of this.ticks) if (Math.abs(set.chapter - this.s) < 1) for (const f of set.ticks) f(t, dt);
     for (const f of this.skyTicks) f(t, dt);
     this.burst.update(dt, t);
     this.hearts.update(dt);

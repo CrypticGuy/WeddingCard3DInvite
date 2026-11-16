@@ -175,13 +175,8 @@ export class Beagle {
     this.tail.add(mesh(tailGeo()));
     this.body.add(this.tail);
 
-    // Wedding outfit: a blush collar, gold bell and bow tie
-    const dress = new Bag();
-    dress.add(new THREE.TorusGeometry(0.15, 0.024, 10, 30), '#f8b6c4', xf([0.565, 0.22, 0], [Math.PI / 2, 0.42, 0]));
-    dress.ball([0.72, 0.14, 0], 0.036, '#f0c872', [1, 1, 1], 2);
-    for (const s of [1, -1]) dress.ball([0.685, 0.175, 0.055 * s], 0.05, '#f39bb0', [0.45, 0.85, 1.25], 2);
-    dress.ball([0.7, 0.178, 0], 0.024, '#f8cdd6');
-    this.body.add(dress.build());
+    // Outfits, one per event, swapped as the scroll reaches it (see setOutfit).
+    this.buildOutfits(mat, torso);
 
     // The pup's mouth is what the thread clips to.
     this.mouth = new THREE.Object3D();
@@ -196,6 +191,172 @@ export class Beagle {
     });
   }
 
+  // Every outfit is made once from a few hundred low-poly triangles in the dog's own
+  // material, then only shown or hidden. Each piece is built around an anchor, so it can
+  // pop in and out by scale. Body pieces ride the torso, head pieces turn with the head.
+  buildOutfits(mat, torso) {
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    const piece = (parent, at, fill) => {
+      const bag = new Bag();
+      fill(bag, (q) => [q.x - at[0], q.y - at[1], q.z - at[2]]);
+      const m = bag.build(mat);
+      m.position.set(...at);
+      m.visible = false;
+      parent.add(m);
+      return m;
+    };
+    // Body pieces are fitted to the torso's real surface: rays are cast at it once, here,
+    // so they hug the fur instead of floating or sinking in. Everything is in body space.
+    const probe = torso.clone();
+    probe.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster();
+    const onSkin = (c, d, lift) => {
+      ray.set(c.clone().addScaledVector(d, 1.2), d.clone().negate());
+      const h = ray.intersectObject(probe, false)[0];
+      return h ? h.point.addScaledVector(h.face.normal, lift) : c.clone().addScaledVector(d, 0.2);
+    };
+    // A sheet that follows the skin: grid(u, v) gives the axis point and outward direction.
+    const sheet = (nu, nv, grid, lift, at) => {
+      const pos = [], idx = [];
+      let out = 0;
+      for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
+        const [c, d] = grid(i / nu, j / nv);
+        if (i === nu >> 1 && j === nv >> 1) out = d;
+        const q = onSkin(c, d, lift);
+        pos.push(q.x - at[0], q.y - at[1], q.z - at[2]);
+      }
+      for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
+        const k = j * (nu + 1) + i;
+        idx.push(k, k + 1, k + nu + 2, k, k + nu + 2, k + nu + 1);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setIndex(idx);
+      g.computeVertexNormals();
+      // Faces point away from the body, whichever way the grid happened to run.
+      const k = (nv >> 1) * (nu + 1) + (nu >> 1), n = g.attributes.normal;
+      if (n.getX(k) * out.x + n.getY(k) * out.y + n.getZ(k) * out.z < 0) {
+        for (let t = 0; t < idx.length; t += 3) [idx[t + 1], idx[t + 2]] = [idx[t + 2], idx[t + 1]];
+        g.setIndex(idx);
+        g.computeVertexNormals();
+      }
+      return g;
+    };
+    // Round the base of the neck. drop slides the front of the loop down onto the chest.
+    const NC = V(0.56, 0.2, 0), NA = V(0.45, 1, 0).normalize(), NU = V(1, -0.45, 0).normalize(), NV = V(0, 0, 1);
+    const around = (a, up = 0, drop = 0) => {
+      const d = NU.clone().multiplyScalar(Math.cos(a)).addScaledVector(NV, Math.sin(a));
+      return [NC.clone().addScaledVector(NA, up - Math.max(0, Math.cos(a)) * drop), d];
+    };
+    const band = (bag, at, color, up0, up1, drop, trim) => {
+      bag.add(sheet(28, 1, (u, v) => around(u * Math.PI * 2, up0 + (up1 - up0) * v, drop), 0.014, at), color, null, trim);
+    };
+    // A turban: a squashed dome with wraps, sat on the crown, in head space.
+    const turban = (bag, base, wrap, s = 1) => {
+      bag.ball([0, 0, 0], 0.205 * s, base, [1.12, 0.6, 1.06], 1);
+      for (const [y, tilt, c] of [[-0.05, 0.18, wrap], [0.0, -0.22, base], [0.05, 0.12, wrap]]) {
+        bag.add(new THREE.TorusGeometry(0.2 * s, 0.026, 5, 18), c, xf([0, y * s, 0], [Math.PI / 2, tilt, 0], [1.1, 1.04, 1]));
+      }
+    };
+    const CROWN = [-0.03, 0.25, 0];
+    const NECK = [NC.x, NC.y, 0];
+    const front = (y, lift) => onSkin(V(0.3, y, 0), V(1, 0, 0), lift);
+
+    const P = {
+      blush: '#f8b9c6', gold: '#f2cf7f', cream: '#fff4e4', mustard: '#f3d27c', pink: '#ffc6d4',
+      peach: '#ffcfae', peachWrap: '#ffe6d2', powder: '#bcd5f5', powderDeep: '#a9c4ee', lavender: '#dcd2f6',
+    };
+    this.outfits = {
+      // The start and the end: a blush collar with a little gold bell
+      collar: [piece(this.body, NECK, (b, rel) => {
+        band(b, NECK, P.blush, 0.0, 0.045, 0.03);
+        b.ball(rel(onSkin(...around(0, -0.02, 0.03), 0.045)), 0.034, P.gold, [1, 1, 1], 1);
+      })],
+      // Mehendi & Sangeet: a marigold garland and a pastel mustard pagdi
+      mehendi: [
+        piece(this.body, NECK, (b, rel) => {
+          const n = 30, cols = ['#ffc766', '#ffdb8f', '#ffb886', '#fff1cf'];
+          for (let i = 0; i < n; i++) b.ball(rel(onSkin(...around((i / n) * Math.PI * 2, 0.01, 0.16), 0.03)), 0.034, cols[i % 4], [1, 1, 1], 0);
+          b.ball(rel(onSkin(...around(0, -0.05, 0.16), 0.05)), 0.03, P.pink, [1, 1.5, 1], 0);
+        }),
+        piece(this.head, CROWN, (b) => {
+          turban(b, P.mustard, P.pink, 0.92);
+          b.ball([0.18, 0.02, 0], 0.03, P.pink, [1, 1, 1], 1);
+        }),
+      ],
+      // Wedding: a sherwani front with a mandarin collar and gold buttons, a peach safa
+      // with a tiny kalgi
+      wedding: [
+        piece(this.body, [0.5, 0, 0], (b, rel) => {
+          b.add(sheet(12, 8, (u, v) => {
+            const az = (u - 0.5) * 2.6, el = -0.75 + v * 1.55;
+            return [V(0.38, 0.02, 0), V(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az))];
+          }, 0.016, [0.5, 0, 0]), '#ffd3b3', null, '#ffe9d6');
+          for (const y of [0.1, 0.0, -0.1]) b.ball(rel(front(y, 0.03)), 0.019, P.gold, [0.6, 1, 1], 0);
+        }),
+        piece(this.body, NECK, (b) => band(b, NECK, P.cream, -0.01, 0.06, 0.02, P.gold)),
+        piece(this.head, CROWN, (b) => {
+          turban(b, P.peach, P.peachWrap);
+          b.ball([0.2, 0.03, 0], 0.034, P.pink, [0.7, 1, 1], 1);                       // jewel
+          b.add(new THREE.ConeGeometry(0.028, 0.2, 6), P.cream, xf([0.15, 0.15, 0], [0, 0, 0.55]), '#ffffff');   // kalgi plume
+          b.ball([0.205, 0.09, 0], 0.016, P.gold, [1, 1, 1], 0);
+          b.add(new THREE.BoxGeometry(0.05, 0.22, 0.12), P.peach, xf([-0.23, -0.1, 0], [0, 0, -0.25]), P.peachWrap);   // the turra down the back
+        }),
+      ],
+      // Reception: a powder-blue bow tie and a little cape scattered with sparkles
+      reception: [
+        piece(this.body, [0.6, 0.1, 0], (b, rel) => {
+          const c = front(0.1, 0.035), [x, y, z] = rel(c);
+          for (const s of [1, -1]) b.ball([x, y, z + 0.06 * s], 0.055, P.powder, [0.45, 0.85, 1.25], 1);
+          b.ball([x + 0.01, y, z], 0.027, P.powderDeep, [1, 1, 1], 0);
+        }),
+        piece(this.body, [0.2, 0.15, 0], (b, rel) => {
+          const grid = (u, v) => { const bb = (v - 0.5) * 3.3; return [V(0.42 - u * 0.48, 0.0, 0), V(0.25 * (0.5 - u), Math.cos(bb), Math.sin(bb)).normalize()]; };
+          b.add(sheet(8, 10, grid, 0.022, [0.2, 0.15, 0]), '#c9d8f6', null, P.lavender, 'y');
+          for (let i = 0; i < 9; i++) b.ball(rel(onSkin(...grid(0.12 + (i % 3) * 0.33, 0.15 + Math.floor(i / 3) * 0.35), 0.03)), 0.014, i % 2 ? '#ffffff' : '#fff3c4', [1, 1, 1], 0);
+        }),
+      ],
+    };
+    this.outfitOn = 'collar';
+    this.outfitWant = 'collar';
+    this.outfitK = 1;
+    for (const m of this.outfits.collar) { m.visible = true; m.scale.setScalar(1); }
+  }
+
+  // Which outfit to wear for a chapter id (an event id, or 'hero'/'finale' for the collar).
+  setOutfit(id, instant = false) {
+    const want = this.outfits[id] ? id : 'collar';
+    if (want === this.outfitWant && !instant) return;
+    this.outfitWant = want;
+    if (instant && want !== this.outfitOn) {
+      for (const m of this.outfits[this.outfitOn]) m.visible = false;
+      this.outfitOn = want;
+      for (const m of this.outfits[want]) { m.visible = true; m.scale.setScalar(1); }
+      this.outfitK = 1;
+    }
+  }
+
+  // A quick swap: the old outfit shrinks away, the new one pops in with a small overshoot.
+  stepOutfit(dt) {
+    if (this.outfitOn !== this.outfitWant) {
+      this._grow = false;
+      this.outfitK -= dt * 8;
+      if (this.outfitK <= 0) {
+        for (const m of this.outfits[this.outfitOn]) m.visible = false;
+        this.outfitOn = this.outfitWant;
+        this.outfitK = 0;
+        for (const m of this.outfits[this.outfitOn]) m.visible = true;
+        this._grow = true;
+      }
+    } else if (this._grow) {
+      this.outfitK = Math.min(1, this.outfitK + dt * 4.5);
+      if (this.outfitK >= 1) this._grow = false;
+    } else return;
+    const k = this.outfitK;
+    const s = this._grow ? 1 + 2.2 * (k - 1) ** 3 + 1.2 * (k - 1) ** 2 : k * k;   // ease out with overshoot
+    for (const m of this.outfits[this.outfitOn]) m.scale.setScalar(Math.max(0.001, s));
+  }
+
   placeOnRing(R, psi, heading) {
     this.root.position.set(Math.sin(psi) * R, Math.cos(psi) * R, 0);
     this.root.rotation.set(0, 0, -psi);
@@ -204,6 +365,7 @@ export class Beagle {
 
   update(dt, t) {
     const { walk, sit, crouch, lean } = this;
+    this.stepOutfit(dt);
     this.phase += this.gait * dt;
     const ph = this.phase;
     const S = Math.sin, sw = 0.72 * walk * (1 - sit);

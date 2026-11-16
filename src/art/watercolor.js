@@ -168,6 +168,7 @@ export const SPRAYS = {
   haldi: { big: ['butter', 'peach'], small: 'butter', leaf: LEAF },
   sangeet: { big: ['lilac', 'blush'], small: 'lilac', leaf: SAGE },
   wedding: { big: ['blush', 'peach'], small: 'ivory', leaf: SAGE },
+  reception: { big: ['lilac', 'blush'], small: 'lilac', leaf: SAGE },
 };
 
 // A diagonal corner spray for the event cards.

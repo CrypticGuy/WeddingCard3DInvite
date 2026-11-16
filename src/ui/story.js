@@ -12,9 +12,22 @@ export function timeOfDay(d) {
   return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
 }
 
+// Events without an `end` are open ended: "6:00 PM onwards" on the card, and a slot of
+// this many hours in calendars, which need some end.
+const OPEN_HOURS = 4;
+export const endOf = (e) => (e.end ? new Date(e.end) : new Date(new Date(e.start).getTime() + OPEN_HOURS * 3600e3));
+
+export const clock = (d) => part(d, { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s*([ap])\.?m\.?$/i, (_, x) => ` ${x.toUpperCase()}M`);
+
 export function timeRange(e) {
-  const f = (d) => part(d, { hour: 'numeric', minute: '2-digit', hour12: true }).replace(' ', ' ').toLowerCase();
-  return `${f(new Date(e.start))} to ${f(new Date(e.end))}`;
+  return e.end ? `${clock(new Date(e.start))} to ${clock(new Date(e.end))}` : `${clock(new Date(e.start))} onwards`;
+}
+
+// Directions: the event's own pin if it has one, else a Google Maps search for the venue.
+export function mapsLink(e) {
+  if (e.maps || e.mapUrl) return e.maps || e.mapUrl;
+  const q = [e.venue, e.address].filter(Boolean).join(', ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
 const utc = (d) => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
@@ -23,7 +36,7 @@ export function googleLink(e) {
   const q = new URLSearchParams({
     action: 'TEMPLATE',
     text: `${e.title}: ${invite.couple.first} & ${invite.couple.second}`,
-    dates: `${utc(new Date(e.start))}/${utc(new Date(e.end))}`,
+    dates: `${utc(new Date(e.start))}/${utc(endOf(e))}`,
     details: e.tagline,
     location: [e.venue, e.address].filter(Boolean).join(', '),
   });
@@ -36,7 +49,7 @@ export function icsFile() {
   for (const e of invite.events) {
     lines.push(
       'BEGIN:VEVENT', `UID:${e.id}-${utc(new Date(e.start))}@invite`, `DTSTAMP:${utc(new Date())}`,
-      `DTSTART:${utc(new Date(e.start))}`, `DTEND:${utc(new Date(e.end))}`,
+      `DTSTART:${utc(new Date(e.start))}`, `DTEND:${utc(endOf(e))}`,
       `SUMMARY:${clean(`${e.title}: ${invite.couple.first} & ${invite.couple.second}`)}`,
       `DESCRIPTION:${clean(e.tagline)}`, `LOCATION:${clean([e.venue, e.address].filter(Boolean).join(', '))}`, 'END:VEVENT',
     );
@@ -50,9 +63,10 @@ export function dateSpan() {
   const a = ds[0], b = ds[ds.length - 1];
   const day = (d) => part(d, { day: 'numeric' });
   const month = part(b, { month: 'long' }), year = part(b, { year: 'numeric' });
+  if (part(a, { dateStyle: 'medium' }) === part(b, { dateStyle: 'medium' })) return `${day(b)} ${month} ${year}`;
   const sameMonth = part(a, { month: 'long' }) === month;
   return sameMonth
-    ? `${day(a)} to ${day(b)} ${month} ${year}`
+    ? `${day(a)}–${day(b)} ${month} ${year}`
     : `${day(a)} ${part(a, { month: 'long' })} to ${day(b)} ${month} ${year}`;
 }
 
@@ -63,19 +77,34 @@ export const touchFirst = () => typeof matchMedia === 'function' && matchMedia('
 export const cueButton = () =>
   `<button class="cue" type="button" data-go="1"><i class="cue-ico" aria-hidden="true"></i><span>${esc(invite.scrollCue[touchFirst() ? 'touch' : 'mouse'])}</span></button>`;
 
-export const letters =(s) => [...s].map((c, i) => `<span class="ch" style="--i:${i}" aria-hidden="true">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('');
+// Each letter animates in on its own; words stay whole so a long title can wrap.
+export function letters(s) {
+  let i = 0;
+  return s.split(' ').map((w) => {
+    const chars = [...w].map((c) => `<span class="ch" style="--i:${i++}" aria-hidden="true">${esc(c)}</span>`).join('');
+    i++;
+    return `<span class="wd">${chars}</span>`;
+  }).join(' ');
+}
+
+// Card art per event id, from public/v1/art/spray-<name>.webp. The reception shares the
+// lantern spray first painted for the sangeet.
+const SPRAY = { mehendi: 'mehendi', wedding: 'wedding', reception: 'sangeet' };
+const PIN = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>';
 
 function eventCard(e, i) {
   const d = dateOf(e);
-  const map = e.mapUrl ? `<a class="btn ghost" href="${esc(e.mapUrl)}" target="_blank" rel="noopener">Open map</a>` : '';
+  const maps = esc(mapsLink(e));
+  const spray = e.spray ?? SPRAY[e.id];
   const address = e.address ? `<span class="sub">${esc(e.address)}</span>` : '';
+  const near = e.near ? `<span class="sub near">${esc(e.near)}</span>` : '';
   return `
   <section class="chapter event" id="${esc(e.id)}" data-chapter="${i + 1}" data-theme-event="${esc(e.id)}" aria-label="${esc(e.title)}">
     <article class="card">
-      <img class="spray" data-art="art/spray-${esc(e.id)}" alt="" width="520" height="520">
+      ${spray ? `<img class="spray" data-art="art/spray-${esc(spray)}" alt="" width="520" height="520">` : ''}
       <div class="card-in">
         <p class="eyebrow r1">${part(d, { weekday: 'long' })} ${timeOfDay(d)}</p>
-        <h2 aria-label="${esc(e.title)}">${letters(e.title)}</h2>
+        <h2 aria-label="${esc(e.title)}">${e.title.length > 11 ? `<span class="fit">${letters(e.title)}</span>` : letters(e.title)}</h2>
         <p class="tag r2">${esc(e.tagline)}</p>
         <div class="when r3">
           <span class="day">${part(d, { day: 'numeric' })}</span>
@@ -83,12 +112,12 @@ function eventCard(e, i) {
         </div>
         <dl class="r4">
           <div><dt>Time</dt><dd>${timeRange(e)}</dd></div>
-          <div><dt>Where</dt><dd>${esc(e.venue)}${address}</dd></div>
+          <div><dt>Where</dt><dd><a class="venue" href="${maps}" target="_blank" rel="noopener" aria-label="${esc(e.venue)}, open in Google Maps">${esc(e.venue)}</a>${address}${near}</dd></div>
           <div><dt>Wear</dt><dd>${esc(e.dress)}</dd></div>
         </dl>
         <div class="actions r5">
           <a class="btn" href="${googleLink(e)}" target="_blank" rel="noopener">Add to calendar</a>
-          ${map}
+          <a class="btn ghost dir" href="${maps}" target="_blank" rel="noopener">${PIN}Get directions</a>
         </div>
       </div>
     </article>

@@ -54,3 +54,7 @@ export const SCENES = {
     paper: '#f9e7dc',
   },
 };
+
+// Event ids without a painting of their own borrow one.
+const BORROW = { reception: 'sangeet' };
+export const sceneArt = (id) => (SCENES[id] ? id : BORROW[id] ?? 'wedding');

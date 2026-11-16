@@ -14,10 +14,10 @@
   --out: cubic-bezier(.16, 1, .3, 1);
   color-scheme: light;
 }
+/* One accent per event id (the ids in src/config.js). Unknown ids keep the defaults above. */
 html[data-chapter='mehendi'] { --accent: #4fa87f; --tint: #dff4e4; --gold: #7fb58f; }
-html[data-chapter='haldi'] { --accent: #d98a12; --tint: #fff0c6; --gold: #e0a93f; }
-html[data-chapter='sangeet'] { --accent: #7a5cc9; --tint: #ece3fd; --gold: #a98fe0; }
 html[data-chapter='wedding'] { --accent: #dc6585; --tint: #ffe3e6; --gold: #d3a55c; }
+html[data-chapter='reception'] { --accent: #5f7fc6; --tint: #e2ebfb; --gold: #a3b6e2; }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -106,7 +106,8 @@ html.locked #story .hero.on { visibility: visible; }
 .eyebrow { font-size: 13px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); }
 
 /* Staggered entrances: everything rests visible; `.on` only plays the motion. */
-.ch { display: inline-block; }
+.ch, .wd { display: inline-block; }
+.wd { white-space: nowrap; }
 .r1, .r2, .r3, .r4, .r5, .ch { transition: opacity .7s var(--out), transform .9s var(--out); }
 .chapter:not(.on) .r1, .chapter:not(.on) .r2, .chapter:not(.on) .r3, .chapter:not(.on) .r4, .chapter:not(.on) .r5 { opacity: 0; transform: translateY(16px); }
 .chapter:not(.on) .ch { opacity: 0; transform: translateY(.55em) rotate(6deg); }
@@ -158,6 +159,7 @@ h1 {
   font-family: var(--display); font-style: italic; font-weight: 300; font-size: clamp(50px, 6.2svh, 62px); line-height: 1;
   font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144; color: var(--ink);
 }
+.card h2 .fit { font-size: .76em; }
 .tag { color: var(--ink-soft); font-size: 16px; text-wrap: balance; }
 .when {
   display: flex; gap: 12px; align-items: center; margin-top: 6px; padding: 7px 22px 9px 18px; background: var(--tint); border-radius: 999px;
@@ -171,6 +173,9 @@ dl div { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items:
 dt { font-size: 12px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-soft); }
 dd { min-width: 0; }
 .sub { display: block; font-size: 14px; color: var(--ink-soft); }
+.venue { color: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.venue:hover { color: var(--accent); }
+.btn .ico { width: 1.05em; height: 1.05em; margin: -.2em .4em -.2em -.15em; vertical-align: middle; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
 .btn {
   display: inline-block; text-decoration: none; font-size: 15px; font-weight: 500; letter-spacing: .02em; padding: 11px 22px;

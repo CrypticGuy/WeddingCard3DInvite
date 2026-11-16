@@ -42,6 +42,7 @@ export const shared = {
   uRim: { value: new THREE.Color('#fff0f4') },
   uRimK: { value: 0.35 },
   uGrow: { value: 1 },   // small plants shrink away as the camera leaves the surface
+  uSelfLit: { value: 0.05 },   // venues glow a little in their own colours as night falls
 };
 
 const RIM = `float rimF = pow(1.0 - saturate(dot(normalize(vViewPosition), normal)), 2.6);
@@ -73,6 +74,23 @@ export function soft(opts = {}) {
   return patchRim(material({ roughness: 0.78, metalness: 0, ...opts }));
 }
 export const vertexSoft = (opts = {}) => soft({ vertexColors: true, ...opts });
+
+// The venues' material: vertex colours that also light themselves a touch, by
+// shared.uSelfLit, so pastel buildings stay clean pastels under a dusk or night sky
+// instead of sinking into grey. No extra lights, one material for every diorama.
+export function venueMat(opts = {}) {
+  const mat = vertexSoft({ roughness: 0.82, ...opts });
+  const rim = mat.onBeforeCompile;
+  mat.customProgramCacheKey = () => 'venue';
+  mat.onBeforeCompile = (s, r) => {
+    rim(s, r);
+    s.uniforms.uSelfLit = shared.uSelfLit;
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uSelfLit;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * uSelfLit;');
+  };
+  return mat;
+}
 
 // Instanced plants: per-vertex aTint (1 = takes instance colour) and aSway (wind weight).
 export function windMaterial(opts = {}, grow = false) {

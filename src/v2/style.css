@@ -15,6 +15,7 @@ html[data-chapter='mehendi'] { --accent: #5d7f62; --gold: #8fa27a; }
 html[data-chapter='haldi'] { --accent: #a9742a; --gold: #c39a4b; }
 html[data-chapter='sangeet'] { --accent: #6b5a93; --gold: #a08cb8; }
 html[data-chapter='wedding'] { --accent: #a4596a; --gold: #b48d4e; }
+html[data-chapter='reception'] { --accent: #6b5a93; --gold: #a08cb8; }
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -162,7 +163,8 @@ html.locked #story .hero.on { visibility: visible; }
 .eyebrow { font-size: 12.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
 
 /* Hero */
-.ch { display: inline-block; }
+.ch, .wd { display: inline-block; }
+.wd { white-space: nowrap; }
 .r1, .r2, .r3, .ch { transition: opacity .7s var(--out), transform .9s var(--out); }
 .hero:not(.on) .r1, .hero:not(.on) .r2, .hero:not(.on) .r3 { opacity: 0; transform: translateY(16px); }
 .hero:not(.on) .ch { opacity: 0; transform: translateY(.5em); }

@@ -73,7 +73,7 @@ export class PaintedWorld extends World {
 
   stepSpin(dt) {
     const p = this.spin;
-    if (this.s < 4.96) {
+    if (this.s < this.chapters.length - 1.04) {
       // Leaving the finale: settle back, so the pull-out always retraces itself.
       p.vaz = p.vel = 0;
       const k = Math.exp(-5 * dt);

@@ -373,13 +373,13 @@ async function boot() {
       setCard(-1);
     } else if (loc.mode === 'outro') {
       prepareBleed('last');
-      if (loc.u > 0 && (world.asleep || world.s < 3.5)) { world.wake(); world.teleport(4); }
-      world.s = 4 + sstep(0.12, 1, loc.u);
+      if (loc.u > 0 && (world.asleep || world.s < events.length - 0.5)) { world.wake(); world.teleport(events.length); }
+      world.s = events.length + sstep(0.12, 1, loc.u);
       const b = 1 - clamp(loc.u / 0.72);
       world.bleedT = snapFor === 1 ? b : 0;
       world.bleedZoom = 1 - 0.5 * clamp(loc.u / 0.72);
       t3d = world.bleedT;
-      setChapter(loc.u > 0.5 ? events.length + 1 : events.length, loc.u > 0.5 ? 'see-you' : 'wedding');
+      setChapter(loc.u > 0.5 ? events.length + 1 : events.length, loc.u > 0.5 ? 'see-you' : events[events.length - 1].id);
       setCard(-1);
     }
 
