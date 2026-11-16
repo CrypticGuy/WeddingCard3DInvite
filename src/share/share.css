@@ -1,0 +1,75 @@
+/* The share page: same quiet contact-sheet look as the versions page. */
+:root {
+  --bg: #fdf3f0;
+  --ink: #5a3350;
+  --soft: #7f5f79;
+  --paper: #fffaf6;
+  --line: #eed8d6;
+  --accent: #b84d72;
+  --display: 'Fraunces Variable', Georgia, serif;
+  --body: 'Jost Variable', 'Avenir Next', 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.5 var(--body);
+  padding: clamp(24px, 5vw, 64px) max(16px, env(safe-area-inset-right, 0px)) 120px max(16px, env(safe-area-inset-left, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; display: grid; gap: 26px; }
+.back { color: var(--soft); font-size: 15px; }
+h1 {
+  margin: 6px 0 0; font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: clamp(40px, 8vw, 64px); line-height: 1.05;
+  font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144;
+}
+header p { margin: 8px 0 0; color: var(--soft); max-width: 58ch; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { padding: 0; margin-bottom: 10px; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg label {
+  position: relative; display: grid; padding: 9px 18px; border-radius: 14px; cursor: pointer;
+  background: var(--paper); border: 1px solid var(--line); line-height: 1.25;
+}
+.seg label small { color: var(--soft); font-size: 13px; }
+.seg input, .card input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.seg label:has(input:focus-visible), .card:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.card {
+  position: relative; display: grid; gap: 10px; align-content: start; cursor: pointer;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 10px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.card:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.frame {
+  position: relative; border-radius: 10px; overflow: hidden; background: var(--line);
+  aspect-ratio: var(--ar); display: grid; place-items: center;
+}
+.frame canvas { display: block; width: 100%; height: 100%; }
+.frame.busy::after {
+  content: ''; position: absolute; inset: 0; margin: auto; width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--accent); border-right-color: transparent; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(1turn); } }
+.card b { font-family: var(--display); font-style: italic; font-weight: 400; font-size: 22px; line-height: 1.1; }
+.card span { color: var(--soft); font-size: 14px; }
+
+.pages { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.pages figure { margin: 0; flex: 0 0 auto; width: clamp(110px, 22vw, 170px); }
+.pages figcaption { font-size: 13px; color: var(--soft); margin-top: 4px; }
+
+
+.actions {
+  position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+  padding: 14px 0 max(14px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--bg) 30%);
+}
+.actions button {
+  font: 500 17px/1 var(--body); padding: 13px 28px; border-radius: 99px; cursor: pointer; border: 1px solid var(--accent);
+}
+.primary { background: var(--accent); color: #fff; }
+.secondary { background: var(--paper); color: var(--accent); }
+.actions button:disabled { opacity: .55; cursor: progress; }
+#status { margin: 0; color: var(--soft); font-size: 15px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .frame.busy::after { animation-duration: 3s; } }

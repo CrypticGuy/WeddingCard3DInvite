@@ -40,6 +40,12 @@ h2 { font-size: clamp(30px, 5vw, 38px); line-height: 1.1; }
 .open { padding: 9px 24px; border-radius: 99px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 500; }
 .monitor { color: var(--ink); font-size: 15px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.share {
+  margin-top: 18px; display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px;
+}
+.share div { display: grid; gap: 4px; min-width: 0; flex: 1 1 280px; }
+.share p { margin: 0; color: var(--soft); }
 @media (max-width: 560px) {
   .version { grid-template-columns: 104px minmax(0, 1fr); }
   .links { flex-direction: column; align-items: flex-start; }

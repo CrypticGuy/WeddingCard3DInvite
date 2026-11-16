@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#fdf3f0" />
+    <title>Share the invite</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="back" href="../">All versions</a>
+        <h1>Share the invite</h1>
+        <p>Pick a size and a design, then save it or send it straight to a chat. Everything is drawn from the invite's own details, so it always matches the site.</p>
+      </header>
+
+      <fieldset class="formats">
+        <legend>Size</legend>
+        <div id="formats" class="seg"></div>
+      </fieldset>
+
+      <fieldset class="designs">
+        <legend>Design</legend>
+        <div id="designs" class="grid"></div>
+      </fieldset>
+
+      <section id="pages" class="pages" hidden aria-label="Pages in the PDF"></section>
+
+      <div class="actions">
+        <button id="download" type="button" class="primary">Download</button>
+        <button id="share" type="button" class="secondary" hidden>Share</button>
+        <p id="status" role="status" aria-live="polite"></p>
+      </div>
+    </main>
+    <script type="module" src="/src/share/main.js"></script>
+  </body>
+</html>
