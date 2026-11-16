@@ -15,6 +15,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve('index.html'),
+        versions: resolve('versions/index.html'),
         share: resolve('share/index.html'),
         ...Object.fromEntries(versions.map((v) => [v, resolve(v, 'index.html')])),
       },
