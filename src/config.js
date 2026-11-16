@@ -23,7 +23,13 @@ export const invite = {
   closingTitle: 'See you there',
   closingNote: 'Bring your dancing shoes. The pup is bringing the thread.',
 
+  // The hint at the foot of the opening screen: one line for mice, one for touch screens.
+  scrollCue: { mouse: 'Scroll to see the events', touch: 'Swipe up to see the events' },
+
   // Countdown runs to the event flagged `main: true`.
+  // The 3D sky follows each event's start time (morning blue to night indigo). To pick a
+  // sky by hand, add `sky: 19.5` (an hour) or `sky: 'dusk'` (morning, afternoon, golden,
+  // sunset, dusk, night) to an event.
   // PLACEHOLDER DATES AND VENUES: replace with the real ones.
   events: [
     {

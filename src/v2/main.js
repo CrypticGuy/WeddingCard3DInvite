@@ -14,6 +14,7 @@ import { Stage, REST } from './stage.js';
 import { PaintedDog } from './dog.js';
 import { ART, artTier, musicSrc } from './tier.js';
 import { detectDevice } from '../device.js';
+import { paletteName } from '../world/palettes.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const html = document.documentElement;
@@ -27,6 +28,12 @@ const tier = artTier(device);
 const audio = new Music(musicSrc(device));
 
 $('#versions').hidden = !params.has('review');
+
+// The colour scheme for the 3D opening and finale. The paintings keep their own colours.
+const palette = paletteName(params);
+
+// Mice are asked to click the envelope, touch screens to tap it.
+if (matchMedia('(pointer: coarse)').matches) $('#tap .label').textContent = 'Tap to Open';
 
 const story = $('#story');
 renderStory(story, withDog);
@@ -113,6 +120,7 @@ function unlockScroll() {
   html.classList.remove('locked');
   $('#chrome').classList.add('in');
   measure();
+  extras.armHint();
 }
 
 function layout() {
@@ -290,6 +298,8 @@ async function boot() {
 
   world = new PaintedWorld($('#gl'), events, device);
   world.cardArt = art;
+  world.paletteName = palette;
+  world.zoom = Number(params.get('zoom')) || 0;
   await world.build(onStep);
   if (mobile) world.thinShadows();
   if (!withDog) {

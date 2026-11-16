@@ -12,11 +12,21 @@ The site root is a review page listing every version. Each version is a folder: 
 
 Every version shows a "Next" arrow and a save button. The saved image and PDF are drawn in the browser by [`src/ui/poster.js`](src/ui/poster.js) from the same config, so they always match the site.
 
+**Share graphics.** `/share/` makes ready-to-send images of the invite in three designs (Letterpress, Evening lanterns, Tiny planet) and four sizes: 1080×1920 for WhatsApp status and stories, 1080×1350 portrait, 1080×1080 square, and an A4 PDF with a cover and one page per event. Pick one, then Download, or Share straight to an app on phones that support it. Everything is drawn in the browser from `src/config.js`, and the layout adapts to the number of events. Code is in `src/share/` (one file per design in `src/share/designs/`).
+
 ## Edit the invite
 
 All wording, dates and venues live in [`src/config.js`](src/config.js). Dates shown there are placeholders until replaced.
 
 Music lives in `public/v1/music/` and is set by `music` in the config. Licences and required credits are in [`public/v1/music/CREDITS.md`](public/v1/music/CREDITS.md).
+
+## Colours and skies
+
+The 3D world's colours come from a palette in [`src/world/palettes.js`](src/world/palettes.js): the sky for the opening, the globe and the finale, the water, the page colour behind the canvas, the vignette and how close the camera sits (`view.wide` for the globe, `view.close` for events; above 1 is closer). `original` is the launch look, unchanged. To change what guests see, set `DEFAULT_PALETTE` at the top of that file.
+
+Guests always get the default (`skyglass`). To compare another palette, add `?palette=porcelain` (or any name in that file) to the URL; nothing is remembered between visits. `?zoom=1.3` tries a different globe distance without editing the palette.
+
+Each event's sky follows the time it starts, from the keyframes in [`src/world/sky.js`](src/world/sky.js): morning, afternoon, golden hour, sunset, dusk and night. To pick a sky by hand, add `sky` to the event in `src/config.js`, as an hour (`sky: 19.5`) or a keyframe name (`sky: 'dusk'`). A palette can also fix a sky for an event id in its `events` field, as `original` does.
 
 ## Run it
 
@@ -25,7 +35,7 @@ npm install
 npm run dev
 ```
 
-Useful URL flags: `?skip` jumps past the opening, `?perf` shows the performance monitor, `?tier=lite|medium|high|full|plain` forces a quality tier.
+Useful URL flags: `?skip` jumps past the opening, `?perf` shows the performance monitor, `?tier=lite|medium|high|full|plain` forces a quality tier, `?palette=name` and `?zoom=1.2` try other colours and camera distances (see above).
 
 ## Device tiers
 

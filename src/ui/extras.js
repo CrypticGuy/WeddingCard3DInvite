@@ -51,14 +51,42 @@ export function mountExtras({ withDog = true } = {}) {
     b.disabled = false;
   });
 
+  // A reader resting on an event for a while gets a little pulse on the arrow.
+  let idle = 0;
+  const rest = () => {
+    clearTimeout(idle);
+    next.classList.remove('idle');
+    if (!next.hidden) idle = setTimeout(() => next.classList.add('idle'), 6000);
+  };
+  addEventListener('scroll', rest, { passive: true });
+
+  const html = document.documentElement;
+  let armed = false;
   return {
     // Which chapter the arrow leads to, or nothing to hide it.
     setNext(chapter, title) {
       next.hidden = chapter == null;
+      rest();
       if (chapter == null) return;
       next.dataset.go = chapter;
       next.firstElementChild.textContent = title;
       next.setAttribute('aria-label', `Go to ${title}`);
+    },
+    // Called once scrolling is allowed. The hero's cue shows, grows more insistent if
+    // nobody scrolls for a few seconds, and leaves for good on the first real scroll.
+    armHint() {
+      if (armed) return;
+      armed = true;
+      if (window.scrollY > 24) { html.classList.add('scrolled'); return; }
+      const nudge = setTimeout(() => html.classList.add('nudge'), 4000);
+      const moved = () => {
+        if (window.scrollY <= 24) return;
+        clearTimeout(nudge);
+        html.classList.remove('nudge');
+        html.classList.add('scrolled');
+        removeEventListener('scroll', moved);
+      };
+      addEventListener('scroll', moved, { passive: true });
     },
   };
 }

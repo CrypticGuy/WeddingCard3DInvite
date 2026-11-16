@@ -78,8 +78,12 @@ export function ambientPetals(count) {
 export class Burst {
   constructor(max = 300) {
     this.max = max;
-    this.mesh = new THREE.InstancedMesh(petalGeo(), new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.7 }), max);
+    // Unlit on purpose: lit petals turned muddy brown against the bright sky.
+    this.mesh = new THREE.InstancedMesh(petalGeo(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }), max);
     this.mesh.frustumCulled = false;
+    // Created now, so the shader compiled at load already has instance colours and the
+    // first burst does not stall on a recompile.
+    this.mesh.setColorAt(0, new THREE.Color('#fff'));
     this.mesh.count = 0;
     this.items = [];
     this.m = new THREE.Matrix4();

@@ -180,13 +180,6 @@ h1 {
 .amp { font-family: var(--script); font-style: normal; font-weight: 400; color: #a4596a; font-size: 1.12em; line-height: .7; }
 .span { font-family: var(--display); font-size: clamp(19px, 2.3vw, 26px); font-variation-settings: 'SOFT' 100, 'opsz' 30; }
 .line { font-size: clamp(15px, 1.5vw, 17px); color: #5f4a55; max-width: 34ch; text-wrap: balance; }
-.cue {
-  position: absolute; bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px)); left: 50%; translate: -50% 0;
-  display: grid; gap: 8px; justify-items: center; font-size: 14px; letter-spacing: .04em; color: #fff; white-space: nowrap;
-  padding: 8px 14px; text-shadow: 0 1px 10px rgba(90, 40, 80, .6);
-}
-.cue i { width: 1.5px; height: 26px; background: linear-gradient(#fff, transparent); animation: drip 1.9s ease-in-out infinite; transform-origin: top; }
-@keyframes drip { 0% { transform: scaleY(0); } 60% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
 
 /* Printed cards: deckle-edged cotton paper, letterpress type */
 .card, .finale-in {
@@ -327,7 +320,6 @@ html[data-mode='dive'] #next { display: none; }
 /* No WebGL: the paintings still play; hero and finale sit on paper. */
 html.no-gl #gl { display: none; }
 html.no-gl .hero-in, html.no-gl .finale-in { background: rgba(251, 245, 234, .92); padding: 22px; }
-html.no-gl .hero .cue { color: var(--ink); text-shadow: none; }
 html.no-gl .finale-in { opacity: 1; transform: none; }
 
 @media (prefers-reduced-motion: reduce) {

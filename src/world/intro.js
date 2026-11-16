@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 import * as THREE from 'three';
 import { R } from './planet.js';
+import { FLAP_OPEN } from './envelope.js';
 
 // The opening shot, start to finish. Times are in seconds from the first tap.
 export function createIntro(world, { onReveal, onHeroIn, onDone }) {
@@ -67,7 +68,8 @@ export function createIntro(world, { onReveal, onHeroIn, onDone }) {
   P(0, { sit: 1, lookPitch: 0.3, lookYaw: 0.1, duration: 0.45 }, 5.18);
 
   // Flap lifts, the card rises.
-  tl.to(env.flap.rotation, { x: -Math.PI * 0.94, duration: 1.05, ease: 'power2.inOut' }, 4.3);
+  tl.to(env.flap.rotation, { x: FLAP_OPEN.x, duration: 1.05, ease: 'power2.inOut' }, 4.3);
+  tl.to(env.flap.position, { z: FLAP_OPEN.z, duration: 1.05, ease: 'power2.inOut' }, 4.3);
   tl.to(intro, { camX: 0.1, camPush: 0.6, duration: 1.4, ease: 'sine.inOut' }, 4.4);
   tl.to(env.card.position, { y: 2.05, duration: 1.1, ease: 'power2.inOut' }, 5.05);
   tl.call(() => {

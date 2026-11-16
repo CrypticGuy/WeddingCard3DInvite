@@ -10,6 +10,7 @@ import { Music } from './audio.js';
 import { mountExtras } from './ui/extras.js';
 import { detectDevice } from './device.js';
 import { clamp, damp } from './world/kit.js';
+import { PALETTES, paletteName } from './world/palettes.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const html = document.documentElement;
@@ -21,6 +22,14 @@ const audio = new Music(invite.music ? `${invite.music}${device.preset?.lowMusic
 
 // Reached from the versions page: offer the way back. Guests never see this.
 $('#versions').hidden = !params.has('review');
+
+// The colour scheme sets the page behind the canvas, so nothing flashes while it loads.
+const palette = paletteName(params);
+html.style.setProperty('--page', PALETTES[palette].page);
+document.querySelector('meta[name="theme-color"]')?.setAttribute('content', PALETTES[palette].page);
+
+// Mice are asked to click the envelope, touch screens to tap it.
+if (matchMedia('(pointer: coarse)').matches) $('#tap .label').textContent = 'Tap to Open';
 
 const story = $('#story');
 renderStory(story);
@@ -142,6 +151,7 @@ function unlockScroll() {
   html.classList.remove('locked');
   $('#chrome').classList.add('in');
   setActive(Math.round(scrollChapter()));
+  extras.armHint();
 }
 
 function showPlainInvite() {
@@ -183,6 +193,8 @@ async function boot() {
 
   const world = new World($('#gl'), invite.events, device);
   world.cardArt = art;
+  world.paletteName = palette;
+  world.zoom = Number(params.get('zoom')) || 0;
   await world.build(onStep);
 
   measureFrames(world);

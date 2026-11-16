@@ -56,7 +56,14 @@ export function dateSpan() {
     : `${day(a)} ${part(a, { month: 'long' })} to ${day(b)} ${month} ${year}`;
 }
 
-export const letters = (s) => [...s].map((c, i) => `<span class="ch" style="--i:${i}" aria-hidden="true">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('');
+// Touch screens are told to swipe, everything else to scroll.
+export const touchFirst = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+// The hero's hint: an icon (a mouse, or a chevron on touch screens) and one line of text.
+export const cueButton = () =>
+  `<button class="cue" type="button" data-go="1"><i class="cue-ico" aria-hidden="true"></i><span>${esc(invite.scrollCue[touchFirst() ? 'touch' : 'mouse'])}</span></button>`;
+
+export const letters =(s) => [...s].map((c, i) => `<span class="ch" style="--i:${i}" aria-hidden="true">${c === ' ' ? '&nbsp;' : esc(c)}</span>`).join('');
 
 function eventCard(e, i) {
   const d = dateOf(e);
@@ -109,7 +116,7 @@ export function renderStory(root) {
       <p class="span r2">${dateSpan()}</p>
       <p class="line r3">${esc(invite.heroLine)}</p>
     </div>
-    <button class="cue" type="button" data-go="1"><span>Scroll to walk with the pup</span><i aria-hidden="true"></i></button>
+    ${cueButton()}
   </section>
   ${invite.events.map(eventCard).join('')}
   <section class="chapter finale" id="see-you" data-chapter="${n + 1}" aria-label="${esc(invite.closingTitle)}">

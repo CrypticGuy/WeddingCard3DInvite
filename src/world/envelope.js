@@ -5,6 +5,9 @@ import { invite } from '../config.js';
 
 export const EW = 1.8, EH = 2.5;           // envelope size
 export const CARD_W = 1.6, CARD_H = 2.24;  // 5:7 card
+// The open flap: just past upright, hinged on the back panel rather than the pocket, so
+// it leans away and the card always slides out in front of it.
+export const FLAP_OPEN = { x: -Math.PI * 1.05, z: -0.05 };
 
 function paper(base, speck) {
   const c = document.createElement('canvas');

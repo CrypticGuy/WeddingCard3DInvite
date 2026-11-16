@@ -2,7 +2,7 @@
 // from src/ui/story.js; everything guests read comes from src/config.js.
 import { invite } from '../config.js';
 import { ART } from './tier.js';
-import { dateOf, dateSpan, esc, googleLink, letters, part, timeOfDay, timeRange } from '../ui/story.js';
+import { cueButton, dateOf, dateSpan, esc, googleLink, letters, part, timeOfDay, timeRange } from '../ui/story.js';
 
 function eventCard(e, i) {
   const d = dateOf(e);
@@ -53,7 +53,7 @@ export function renderStory(root, withDog = true) {
       <p class="span r2">${dateSpan()}</p>
       <p class="line r3">${esc(invite.heroLine)}</p>
     </div>
-    <button class="cue" type="button" data-go="1"><span>${withDog ? 'Scroll to walk with the pup' : 'Scroll to begin'}</span><i aria-hidden="true"></i></button>
+    ${cueButton()}
   </section>
   <div class="gap dive" aria-hidden="true"></div>
   ${invite.events.map(eventCard).join('')}

@@ -9,6 +9,46 @@
 #next svg { animation: next-nudge 1.7s ease-in-out infinite; }
 @keyframes next-nudge { 50% { transform: translateY(3px); } }
 html.locked #next { display: none; }
+/* Resting on one event a while: a soft ring says there is more below. */
+#next.idle { animation: next-ring 2s ease-out infinite; }
+@keyframes next-ring {
+  0% { box-shadow: 0 6px 16px -10px rgba(80, 50, 60, .6), 0 0 0 0 rgba(255, 250, 244, .85); }
+  100% { box-shadow: 0 6px 16px -10px rgba(80, 50, 60, .6), 0 0 0 14px rgba(255, 250, 244, 0); }
+}
+
+/* The hero's cue: a paper pill like the arrow. It is only ever faded, never display:none,
+   because V1 measures where it sits to frame the globe above it. */
+.cue {
+  position: absolute; z-index: 2; left: 50%; bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px)); translate: -50% 0;
+  display: flex; align-items: center; gap: 10px; padding: 9px 18px 9px 14px; border: 0; border-radius: 999px;
+  background: rgba(255, 250, 244, .92); color: var(--ink); font: 500 14.5px/1.2 var(--body); letter-spacing: .02em; white-space: nowrap;
+  box-shadow: 0 8px 20px -10px rgba(80, 50, 60, .55); cursor: pointer;
+  transition: opacity .7s ease; animation: cue-bob 2.6s ease-in-out infinite;
+}
+html.locked .cue, html.scrolled .cue { opacity: 0; pointer-events: none; }
+/* Mouse: an outline with its wheel rolling down. */
+.cue-ico { position: relative; flex: none; width: 14px; height: 21px; border: 1.6px solid currentColor; border-radius: 8px; opacity: .85; }
+.cue-ico::before {
+  content: ''; position: absolute; left: 50%; top: 3.5px; width: 2.4px; height: 5px; margin-left: -1.2px; border-radius: 2px;
+  background: currentColor; animation: cue-wheel 1.6s ease-in-out infinite;
+}
+@keyframes cue-wheel { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(6px); opacity: 0; } 100% { transform: translateY(6px); opacity: 0; } }
+@keyframes cue-bob { 50% { transform: translateY(-3px); } }
+/* Touch: a chevron pointing the way to swipe. */
+@media (pointer: coarse) {
+  .cue-ico { width: 12px; height: 14px; border: 0; border-radius: 0; }
+  .cue-ico::before {
+    top: 4px; width: 8px; height: 8px; margin-left: -4px; border-radius: 1px; background: none;
+    border-left: 2px solid currentColor; border-top: 2px solid currentColor; rotate: 45deg; animation: cue-up 1.4s ease-in-out infinite;
+  }
+}
+@keyframes cue-up { 0%, 100% { transform: translateY(2px); opacity: .5; } 50% { transform: translateY(-3px); opacity: 1; } }
+/* Nobody has scrolled yet: a bigger hop and a ring of light. */
+.cue::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+html.nudge .cue { animation: cue-hop 1.3s cubic-bezier(.3, 0, .3, 1) infinite; }
+html.nudge .cue::after { animation: cue-ring 1.8s ease-out infinite; }
+@keyframes cue-hop { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } 55% { transform: translateY(0); } 70% { transform: translateY(-3px); } }
+@keyframes cue-ring { 0% { box-shadow: 0 0 0 0 rgba(255, 250, 244, .9); } 100% { box-shadow: 0 0 0 16px rgba(255, 250, 244, 0); } }
 
 #grab { position: fixed; z-index: 26; left: var(--grab-left, max(14px, env(safe-area-inset-left))); top: max(14px, env(safe-area-inset-top)); }
 #grab .open {
@@ -28,5 +68,5 @@ html.locked #next { display: none; }
 #grab .menu button:hover, #grab .menu button:focus-visible { background: rgba(120, 80, 90, .1); }
 
 @media (prefers-reduced-motion: reduce) {
-  #next svg { animation: none; }
+  #next svg, #next.idle, .cue, html.nudge .cue, .cue-ico::before, html.nudge .cue::after { animation: none; }
 }

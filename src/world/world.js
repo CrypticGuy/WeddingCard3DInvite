@@ -6,22 +6,29 @@ import { loaders, RADIUS, place } from './props/index.js';
 import { Beagle } from './beagle.js';
 import { createEnvelope, Thread, CARD_H, CARD_W } from './envelope.js';
 import { ambientPetals, Burst, Hearts, createSkyObjects } from './particles.js';
+import { PALETTES, DEFAULT_PALETTE } from './palettes.js';
+import { SKY_TIMES, skyTime, skySpan } from './sky.js';
 
 const C = (h) => new THREE.Color(h);
-const mood = (top, mid, bot, sun, sunI, hemiSky, hemiGround, hemiI, rim, night = 0) => ({
-  top: C(top), mid: C(mid), bot: C(bot), sun: C(sun), sunI, hemiSky: C(hemiSky), hemiGround: C(hemiGround), hemiI, rim: C(rim), night,
-});
+const COLOURS = ['top', 'mid', 'bot', 'sun', 'hemiSky', 'hemiGround', 'rim'];
+const SCALARS = ['sunI', 'hemiI', 'night', 'sunEl'];
+// The sky glow keeps one compass bearing; only its height changes through the day.
+const SUN_H = new THREE.Vector2(0.5, -0.72).normalize();
+const SUN_EL = Math.atan2(0.45, Math.hypot(0.5, 0.72));
 
-// One light-and-sky recipe per chapter; the scroll blends between them.
-const MOODS = {
-  intro: mood('#f9c7da', '#fddfd9', '#fff1dc', '#fff0dc', 1.55, '#fff2ee', '#e7f3dc', 1.4, '#ffeef2'),
-  hero: mood('#a9c9f3', '#e9cdea', '#ffe6d3', '#fff3e0', 1.6, '#f6f0ff', '#e6f2e0', 1.45, '#ffe9f3'),
-  mehendi: mood('#9fdccf', '#cdeed0', '#fff3d2', '#fff4da', 1.5, '#effff2', '#d7eccd', 1.3, '#f0fff2'),
-  haldi: mood('#ffcf74', '#ffdf9c', '#fff1c4', '#ffeab8', 1.6, '#fff6d9', '#f4edc0', 1.35, '#fff4cc'),
-  sangeet: mood('#4e4b9c', '#a583d4', '#f7a8c4', '#e8dcff', 1.15, '#d4ccf6', '#c2a8e0', 1.45, '#e0c8ff', 1),
-  wedding: mood('#f38fa8', '#fbbfb4', '#ffe2b0', '#ffdcb0', 1.55, '#ffe6e2', '#fbdccb', 1.35, '#ffe4d6', 0.25),
-  finale: mood('#6f7fcf', '#d7a8df', '#ffcfbd', '#ffe4d0', 1.4, '#e2d8fb', '#f2d2dc', 1.4, '#ffdfea', 0.6),
+// One light-and-sky recipe, from a palette's plain data (src/world/palettes.js).
+const mood = (m) => {
+  const o = {};
+  for (const k of COLOURS) o[k] = C(m[k]);
+  Object.assign(o, { sunI: m.sunI, hemiI: m.hemiI, night: m.night ?? 0, sunEl: m.sunEl ?? SUN_EL });
+  return o;
 };
+const lerpMood = (o, a, b, t) => {
+  for (const k of COLOURS) o[k].copy(a[k]).lerp(b[k], t);
+  for (const k of SCALARS) o[k] = lerp(a[k], b[k], t);
+  return o;
+};
+const WHITE = { top: '#fff', mid: '#fff', bot: '#fff', sun: '#fff', hemiSky: '#fff', hemiGround: '#fff', rim: '#fff', sunI: 1, hemiI: 1 };
 
 const smoother = (t) => t * t * t * (t * (t * 6 - 15) + 10);
 const v3 = (a) => new THREE.Vector3(...a);
@@ -57,6 +64,8 @@ export class World {
     this.pixelRatio = 1;
     this.frames = 0;
     this.lastShadowTheta = 1e9;
+    this.paletteName = DEFAULT_PALETTE;   // set before build() to start on another
+    this.zoom = 0;                        // a ?zoom= override for the globe shots, 0 for none
   }
 
   async build(onStep = () => {}) {
@@ -142,7 +151,8 @@ export class World {
     }
     this.quality = new Quality(this);
     this.resize();
-    this.setMood(MOODS.intro);
+    this.setPalette(this.paletteName);
+    this.setMood(this.moods.intro);
     this.compile();
     onStep(1);
   }
@@ -250,11 +260,39 @@ export class World {
     this.chapters.forEach((id, c) => { if (Math.abs(c - i) > this.p.setWindow + 1) this.dropSet(id); });
   }
 
+  // Switches colour scheme. Takes effect on the next frame, so it can change live.
+  setPalette(name) {
+    const id = PALETTES[name] ? name : DEFAULT_PALETTE;
+    const pal = PALETTES[id];
+    this.paletteName = id;
+    this.palette = pal;
+    const moods = {};
+    for (const [k, m] of Object.entries(pal.moods)) moods[k] = mood(m);
+    this.moods = moods;
+    // An event's sky: named in the palette, else the time of day it starts at.
+    const keys = pal.sky ?? SKY_TIMES;
+    const frames = keys.map(mood);
+    const eventMood = (e) => {
+      if (pal.events?.[e.id]) return mood(pal.events[e.id]);
+      const { a, b, t } = skySpan(keys, skyTime(e, keys));
+      return lerpMood(mood(WHITE), frames[a], frames[b], t);
+    };
+    this.chapterMoods = [moods.hero, ...this.events.map(eventMood), moods.finale];
+    const w = this.water.material.uniforms;
+    w.uDeep.value.set(pal.water.deep);
+    w.uShallow.value.set(pal.water.shallow);
+    if (this.post) this.post.uniforms.uVig.value = pal.vignette;
+    this.view = { wide: this.zoom || pal.view.wide, close: pal.view.close };
+  }
+
   setMood(m) {
     const u = this.skyU;
     u.top.value.copy(m.top); u.mid.value.copy(m.mid); u.bot.value.copy(m.bot);
     u.sunCol.value.copy(m.sun);
     u.night.value = m.night;
+    const ce = Math.cos(m.sunEl);
+    u.sunDir.value.set(SUN_H.x * ce, Math.sin(m.sunEl), SUN_H.y * ce);
+    if (this.bloom) this.bloom.strength = 0.24 + this.palette.bloomNight * m.night;
     this.sun.color.copy(m.sun); this.sun.intensity = m.sunI;
     this.hemi.color.copy(m.hemiSky); this.hemi.groundColor.copy(m.hemiGround); this.hemi.intensity = m.hemiI;
     shared.uRim.value.copy(m.rim);
@@ -269,10 +307,7 @@ export class World {
   }
 
   blendMood(a, b, t, slot = '_m') {
-    const o = (this[slot] ||= mood('#fff', '#fff', '#fff', '#fff', 1, '#fff', '#fff', 1, '#fff'));
-    for (const k of ['top', 'mid', 'bot', 'sun', 'hemiSky', 'hemiGround', 'rim']) o[k].copy(a[k]).lerp(b[k], t);
-    for (const k of ['sunI', 'hemiI', 'night']) o[k] = lerp(a[k], b[k], t);
-    return o;
+    return lerpMood((this[slot] ||= mood(WHITE)), a, b, t);
   }
 
   resize() {
@@ -305,6 +340,7 @@ export class World {
   pose(name) {
     const a = this.aspect, portrait = a < 0.9;
     const fit = clamp(1.32 / a, 1, 2.0);
+    const view = this.view ?? { wide: 1, close: 1 };   // above 1 is closer
     if (name === 'intro') {
       const f = clamp(0.98 / a, 1, 2.05);
       const tgt = [0.22 + this.intro.camX, R + 1.12, -0.6];
@@ -316,10 +352,13 @@ export class World {
       const az = hero ? 0.82 : 0.95, el = hero ? 0.16 : 0.3;
       const free = hero ? this.layout?.hero : this.layout?.finale;
       if (free) {
-        const { dist, sx, sy } = this.fitTo(free, 26);
+        // Beside the text (phones on their side) the screen's height already limits the
+        // globe, and moving closer would crop its top, so the zoom stays small there.
+        const zoom = free.w > free.h ? Math.min(view.wide, 1.04) : view.wide;
+        const { dist, sx, sy } = this.fitTo(free, 26 / zoom);
         return { pos: [Math.sin(az) * dist, Math.sin(el) * dist, Math.cos(az) * dist], tgt: [0, 0, 0], sx, sy, wide: 1, blur: 0 };
       }
-      const dist = (hero ? 52 : 58) * clamp(0.98 / a, 1, 1.7);
+      const dist = ((hero ? 52 : 58) * clamp(0.98 / a, 1, 1.7)) / view.wide;
       return {
         pos: [Math.sin(az) * dist, Math.sin(el) * dist, Math.cos(az) * dist], tgt: [0, 0, 0],
         sx: 0, sy: portrait ? (hero ? -0.14 : 0.24) : (hero ? -0.3 : 0),
@@ -327,11 +366,11 @@ export class World {
       };
     }
     if (this.layout?.event) {
-      const { dist, sx, sy } = this.fitTo(this.layout.event, 5.6);
+      const { dist, sx, sy } = this.fitTo(this.layout.event, 5.6 / view.close);
       const tgt = [0, R + 2, -1.3];
       return { pos: [tgt[0] + 0.07 * dist, tgt[1] + 0.13 * dist, tgt[2] + dist], tgt, sx, sy, wide: 0, blur: this.high ? 3.4 : 0 };
     }
-    const dist = 9.3 * fit;
+    const dist = (9.3 * fit) / view.close;
     const tgt = [0, R + 1.5, -1.3];
     return {
       pos: [tgt[0] + 0.07 * dist, tgt[1] + 0.13 * dist, tgt[2] + dist], tgt,
@@ -393,8 +432,9 @@ export class World {
     const n = this.chapters.length;
     const s = clamp(this.s, 0, n - 1);
     const i = Math.min(Math.floor(s), n - 2), f = s - i;
-    const m = this.blendMood(MOODS[this.chapters[i]] || MOODS.hero, MOODS[this.chapters[i + 1]] || MOODS.hero, sstep(0.1, 0.9, f));
-    this.setMood(this.introBlend < 1 ? this.blendMood(MOODS.intro, m, smoother(this.introBlend), '_m2') : m);
+    const cm = this.chapterMoods, hero = this.moods.hero;
+    const m = this.blendMood(cm[i] || hero, cm[i + 1] || hero, sstep(0.1, 0.9, f));
+    this.setMood(this.introBlend < 1 ? this.blendMood(this.moods.intro, m, smoother(this.introBlend), '_m2') : m);
   }
 
   updateDog(dt, t) {
@@ -499,6 +539,9 @@ export class World {
 
   detachCard() {
     const c = this.env.card;
+    // In flight the card passes between the sun and the meadow; its shadow would sweep
+    // a dark grey slab across the envelope and the grass.
+    c.traverse((o) => { o.castShadow = false; });
     this.scene.attach(c);
     this.cardFrom = { p: c.position.clone(), q: c.quaternion.clone(), s: c.scale.x };
     this.cardFree = true;
