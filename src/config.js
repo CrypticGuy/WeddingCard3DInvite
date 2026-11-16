@@ -5,6 +5,8 @@
 
 export const invite = {
   couple: { first: 'Parushi', second: 'Rishabh' },
+  // The beagle's name, on the gold tag on its collar.
+  dogName: 'Mojo',
   timeZone: 'Asia/Kolkata',
 
   // Background music, from public/v1/music. Licence details are in CREDITS.md there,

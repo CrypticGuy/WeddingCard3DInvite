@@ -22,6 +22,7 @@ All wording, dates and venues live in [`src/config.js`](src/config.js); the comm
 - `venue`, `address` and an optional landmark `near` show on the card. The venue name and the "Get directions" button open Google Maps, searching for "venue, address". To point at an exact pin instead, paste its link into `maps`.
 - `tagline` and `dress` are the line under the title and the "Wear" line.
 - The `id` (`mehendi`, `wedding`, `reception`) picks the 3D scene, meadow and card colours, card art and the dog's outfit, so keep those. A new id still works, with the start meadow and no diorama.
+- `dogName` is the name on the gold tag on the beagle's collar. The beagle and its jackets are built in [`src/world/beagle.js`](src/world/beagle.js).
 
 The dioramas are in `src/world/props/` (one file per event id, listed in `index.js`), sharing the pastel colours in `common.js`. Their moving extras (torans, notes, diya flames, petals, fairy lights, sparkles) are thinned per device tier by `fx` in `src/device.js`, only move while their event is on screen, and hold still for visitors who prefer reduced motion.
 
