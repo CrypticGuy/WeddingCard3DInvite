@@ -82,9 +82,12 @@ function box(el) {
 }
 function measureFrames(world) {
   const first = chapters[0], W = first.offsetWidth, H = first.offsetHeight;
+  // A card spanning most of the width (phones) leaves the space above it. A narrower card
+  // leaves the wider side beside it, whichever side of the screen it sits on.
   const around = (el) => {
     const c = box(el);
-    return c.l < W * 0.25 ? { x: 0, y: 0, w: W, h: c.t } : { x: 0, y: 0, w: c.l, h: H };
+    if (c.r - c.l > W * 0.6) return { x: 0, y: 0, w: W, h: c.t };
+    return W - c.r > c.l ? { x: c.r, y: 0, w: W - c.r, h: H } : { x: 0, y: 0, w: c.l, h: H };
   };
   const text = box($('.hero-in')), cue = box($('.cue'));
   const beside = text.r < W * 0.62;
